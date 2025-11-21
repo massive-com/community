@@ -115,22 +115,21 @@ uv run screener.py find [OPTIONS]
 
 **Options:**
 - `--symbol`: Stock symbol (required, e.g., SPY, AAPL, TSLA)
-- `--max-days`: Maximum days to expiration (default: 7)
-- `--min-days`: Minimum days to expiration (default: 5)
-- `--min-credit`: Minimum net credit required (default: 0.10)
-- `--max-risk`: Maximum risk allowed (default: 10.00)
-- `--min-probability`: Minimum probability of profit % (default: 30.0)
-- `--min-credit-ratio`: Minimum credit/spread width ratio (0–1). `0.35` ≈ 35% target profit.
-- `--short-delta-range`: Delta range for short legs (format `min,max`, accepts negatives for puts)
-- `--long-delta-range`: Delta range for long legs
-- `--short-theta-range`: Theta range for short legs
-- `--long-theta-range`: Theta range for long legs
-- `--iv-range`: Implied volatility range applied to every leg
-- `--account-size`: Account size in USD to enable percentage capital limits
-- `--max-capital-pct`: Max percent of account per condor (default 5% when account size is set)
-- `--max-capital`: Absolute USD cap per condor (per-contract risk)
-- `--criteria`: Ranking criteria - `credit`, `probability`, or `risk_reward` (default: credit)
-- `--limit`: Maximum number of iron condors to save to CSV (default: 10)
+- `--max-days` / `--min-days`: DTE window (defaults 7 / 5). Only expirations inside this band are considered.
+- `--min-credit`: Minimum net credit per condor (default 0.10).
+- `--max-risk`: Maximum allowed max loss per condor (default 10.00).
+- `--min-probability`: Minimum probability of profit % (default 30.0).
+- `--min-credit-ratio`: Minimum credit ÷ spread width (default 0.0; e.g., 0.35 ≈ 35% target return on risk).
+- `--min-vol`: Minimum daily *volume* per option leg (default 5).
+- `--min-oi`: Minimum open interest per leg (default 25).
+- `--short-delta-range`, `--long-delta-range`: Optional delta bands for short/long legs (pass `min,max`; off by default).
+- `--short-theta-range`, `--long-theta-range`: Optional theta bands (off by default).
+- `--iv-range`: Optional implied-volatility band (`min,max`; off by default).
+- `--account-size`: Enables percentage-based capital guardrail.
+- `--max-capital-pct`: Max percent of account per condor (default 5% when `--account-size` is set).
+- `--max-capital`: Absolute USD cap per condor (per contract risk). You can use this without `--account-size`.
+- `--criteria`: Console ranking metric (`credit`, `probability`, or `risk_reward`; default `credit`).
+- `--limit`: Number of entries printed in the console (default 10). The CSV always contains *every* filtered condor regardless of this limit.
 
 **Examples:**
 ```bash
