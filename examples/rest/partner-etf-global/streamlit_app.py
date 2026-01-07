@@ -1,7 +1,7 @@
-"""ETF Health Pulse - Streamlit demo for Massive + ETF Global partnership.
+"""ETF Health Pulse - Streamlit demo for Massive + ETF Global® partnership.
 
 This single-file app showcases how to layer analytics, momentum detection,
-and storytelling on top of Massive's ETF Global endpoints.
+and storytelling on top of Massive's ETF Global® endpoints.
 """
 from __future__ import annotations
 
@@ -588,7 +588,7 @@ def main():
     )
     st.title("ETF Health Pulse")
     st.caption(
-        "Powered by Massive.com v2.0.2 client • ETF Global partnership data "
+        "Powered by Massive.com v2.0.2 client • ETF Global® partnership data "
         "(/etf-global/v1 endpoints)."
     )
 
@@ -684,7 +684,7 @@ def main():
             if parsed.get("status") == "NOT_AUTHORIZED":
                 return (
                     pd.DataFrame(),
-                    f"{label.title()} data requires ETF Global add-ons on your Massive account. "
+                    f"{label.title()} data requires ETF Global® add-ons on your Massive account. "
                     "See https://massive.com/partners/etf-global for upgrade options.",
                 )
             return (
@@ -698,7 +698,7 @@ def main():
                 f"Unable to load {label} data ({exc}). Please retry in a moment.",
             )
     overall_start = time.time()
-    with st.spinner("Fetching Massive ETF Global data..."):
+    with st.spinner("Fetching Massive ETF Global® data..."):
         constituents_df, constituents_err = fetch_dataset(
             "constituents",
             lambda: load_constituents_df(
@@ -765,7 +765,7 @@ def main():
 
     st.divider()
     st.caption(
-        "Educational example. Data courtesy of Massive.com + ETF Global. "
+        "Educational example. Data courtesy of Massive.com + ETF Global®. "
         "Always confirm entitlements and licensing before using in production."
     )
 

@@ -4,13 +4,13 @@
   <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
 </div>
 
-A Streamlit experience that demonstrates how the new Massive + ETF Global datasets can power a real-time ETF health monitor. Instead of only listing API responses, this demo layers analytics, anomaly detection, and narrative insights on top of the `/etf-global/v1` endpoints.
+A Streamlit experience that demonstrates how the new Massive + ETF Global® datasets can power a real-time ETF health monitor. Instead of only listing API responses, this demo layers analytics, anomaly detection, and narrative insights on top of the `/etf-global/v1` endpoints.
 
 ## ✨ Highlights
 
 - **Exposure Concentration Watch** – surfaces holdings concentration (HHI), top constituents, and sector tilts for overlap checks.
 - **Fund Flow Momentum Detector** – calculates rolling z-scores across capital flows + NAV to flag bullish/bearish rotation.
-- **Risk/Reward Scorecard** – renders ETF Global's proprietary scores with a polar chart for quick qualitative reads.
+- **Risk/Reward Scorecard** – renders ETF Global®'s proprietary scores with a polar chart for quick qualitative reads.
 - **Profile & Taxonomy Contextualizer** – combines metadata, fee data, exposures, and taxonomy tags into a strategy summary.
 - **Actionable Highlights Panel** – synthesizes the data into plain-English talking points for PM or research hand-offs.
 
@@ -27,7 +27,7 @@ A Streamlit experience that demonstrates how the new Massive + ETF Global datase
   ```bash
   curl -Ls https://astral.sh/uv/install.sh | sh
   ```
-- Massive API key with ETF Global add-on entitlement
+- Massive API key with ETF Global® add-on entitlement
 
 ### Installation
 
@@ -50,7 +50,7 @@ A Streamlit experience that demonstrates how the new Massive + ETF Global datase
 
 4. **Verify entitlements:**
    - Sign in at [massive.com](https://massive.com/dashboard)
-   - Make sure the ETF Global partnership is enabled on your account
+   - Make sure the ETF Global® partnership is enabled on your account
    - Copy the API key into `.env`
 
 ### Run the dashboard
@@ -74,7 +74,7 @@ uv run streamlit run streamlit_app.py
 ### 1. Actionable Highlights
 - Derives Herfindahl-Hirschman Index (HHI) using `/etf-global/v1/constituents`.
 - Combines last-three-day net flows with z-scores from `/fund-flows` to classify inflow/outflow regimes.
-- Surfaces ETF Global `risk_total_score`, `reward_score`, and `quant_grade` from `/analytics`.
+- Surfaces ETF Global® `risk_total_score`, `reward_score`, and `quant_grade` from `/analytics`.
 - Pulls net expense ratio, AUM, sector exposures, and taxonomy tags from `/profiles` & `/taxonomies` for narrative context.
 
 ### 2. Exposure Concentration Watch
@@ -92,7 +92,7 @@ uv run streamlit run streamlit_app.py
 
 ### 4. Risk / Reward Scorecard
 - Fetches the most recent analytics record (sorted by `processed_date.desc`, then `effective_date`).
-- Converts ETF Global analytics results into Streamlit metrics and a polar chart.
+- Converts ETF Global® analytics results into Streamlit metrics and a polar chart.
 - Displays the latest risk/reward/quant scores with human-readable tier classifications.
 
 ### 5. Profile & Taxonomy Contextualizer
@@ -105,14 +105,14 @@ uv run streamlit run streamlit_app.py
 
 | Variable | Description |
 | --- | --- |
-| `MASSIVE_API_KEY` | Required. API key with ETF Global access. |
+| `MASSIVE_API_KEY` | Required. API key with ETF Global® access. |
 | `LOG_LEVEL` | Optional. Defaults to `INFO`. Set to `DEBUG` for verbose logging. |
 
 - The dashboard loads `.env` at startup and falls back to Streamlit secrets when deployed.
 - All outbound requests go through the official `massive==2.0.2` Python client.
 - **Data Sorting**: All endpoints are sorted by `processed_date.desc` to fetch the most recent data first, then client-side sorted by `effective_date` for display.
 - **Smart Caching**: API responses are cached for 10 minutes to minimize redundant calls. The latest date detection is cached per ticker in session state.
-- **Error Handling**: The dashboard gracefully handles missing entitlements and displays helpful messages when ETF Global add-ons are not enabled on your account.
+- **Error Handling**: The dashboard gracefully handles missing entitlements and displays helpful messages when ETF Global® add-ons are not enabled on your account.
 
 ## 🧪 Testing & Logging
 
@@ -128,7 +128,7 @@ uv run streamlit run streamlit_app.py
 | --- | --- |
 | `MASSIVE_API_KEY is missing` | Copy `.env.example` to `.env` and add your key, or supply `st.secrets`. |
 | `RuntimeError: Unable to load ...` | Usually an entitlement or rate-limit problem—check your plan and retry. |
-| `NOT_AUTHORIZED` warnings | Your API key doesn't have ETF Global entitlements. Visit [massive.com/partners/etf-global](https://massive.com/partners/etf-global) to upgrade. |
+| `NOT_AUTHORIZED` warnings | Your API key doesn't have ETF Global® entitlements. Visit [massive.com/partners/etf-global](https://massive.com/partners/etf-global) to upgrade. |
 | Empty charts/tables | The ETF may not report data for the selected date. The dashboard auto-detects the latest available date—try using that, or select an earlier business day. |
 | Latest date detection not working | If auto-detection fails, the dashboard falls back to 5 days ago. You can manually select any date from the date picker. |
 | Duplicate equities in holdings | The dashboard automatically deduplicates constituents by ticker (keeping the highest weight entry). If you still see duplicates, check the raw data export. |
