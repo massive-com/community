@@ -1,10 +1,10 @@
-# Corporate Events Calendar Powered by TMX + Massive
+# Corporate Events Calendar Powered by TMX Wall Street Horizon + Massive
 
 <div align="center">
   <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
 </div>
 
-A Streamlit dashboard that demonstrates how Massive's TMX Corporate Events API can be used to visualize and track corporate events. This demo showcases earnings announcements, dividends, shareholder meetings, conferences, and more in an interactive calendar interface with flexible filtering and detailed event information.
+A Streamlit dashboard that demonstrates how Massive's TMX Wall Street Horizon Corporate Events API can be used to visualize and track corporate events. This demo showcases earnings announcements, dividends, shareholder meetings, conferences, and more in an interactive calendar interface with flexible filtering and detailed event information.
 
 ## ✨ Highlights
 
@@ -32,7 +32,7 @@ A Streamlit dashboard that demonstrates how Massive's TMX Corporate Events API c
   ```bash
   curl -Ls https://astral.sh/uv/install.sh | sh
   ```
-- Massive API key with TMX Corporate Events entitlement
+- Massive API key with TMX Wall Street Horizon Corporate Events entitlement
 
 ### Installation
 
@@ -55,7 +55,7 @@ A Streamlit dashboard that demonstrates how Massive's TMX Corporate Events API c
 
 4. **Verify entitlements:**
    - Sign in at [massive.com](https://massive.com/dashboard)
-   - Make sure the TMX Corporate Events partnership is enabled on your account
+   - Make sure the TMX Wall Street Horizon Corporate Events partnership is enabled on your account
    - Copy the API key into `.env`
 
 ### Run the dashboard
@@ -124,7 +124,7 @@ uv run streamlit run streamlit_app.py
 
 | Variable | Description |
 | --- | --- |
-| `MASSIVE_API_KEY` | Required. API key with TMX Corporate Events access. |
+| `MASSIVE_API_KEY` | Required. API key with TMX Wall Street Horizon Corporate Events access. |
 
 - The dashboard loads `.env` at startup and falls back to Streamlit secrets when deployed.
 - All outbound requests go through the official Massive Python client.

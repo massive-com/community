@@ -364,14 +364,14 @@ with st.sidebar:
         st.info("API Key entered manually")
     
     st.divider()
-    st.caption("**About:** This app showcases Massive's TMX Corporate Events API. Filter by ticker, event type, status, and date range to view upcoming corporate events in an interactive calendar.")
+    st.caption("**About:** This app showcases Massive's TMX Wall Street Horizon Corporate Events API. Filter by ticker, event type, status, and date range to view upcoming corporate events in an interactive calendar.")
 
 st.title("📅 Corporate Events Calendar")
-st.caption("Powered by Massive • TMX Corporate Events")
+st.caption("Powered by Massive • TMX Wall Street Horizon Corporate Events")
 
 with st.expander("ℹ️ About This Demo", expanded=False):
     st.markdown("""
-    This application demonstrates the capabilities of Massive's **TMX Corporate Events API** endpoint:
+    This application demonstrates the capabilities of Massive's **TMX Wall Street Horizon Corporate Events API** endpoint:
     
     - **Comprehensive Event Types:** Earnings announcements, dividends, shareholder meetings, conferences, and more
     - **Status Tracking:** View confirmed, pending, canceled, or postponed events
@@ -681,6 +681,6 @@ if st.session_state.get("events_loaded", False):
 st.divider()
 st.caption(
     "Filter by ticker, event type, status, and date range • "
-    "Data: Massive TMX Corporate Events API • "
+    "Data: Massive TMX Wall Street Horizon Corporate Events API • "
     f"Client: massive==2.0.3"
 )

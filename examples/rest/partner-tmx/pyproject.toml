@@ -1,7 +1,7 @@
 [project]
 name = "corporate-events-calendar"
 version = "0.1.0"
-description = "Streamlit app for visualizing corporate events from Massive TMX endpoint"
+description = "Streamlit app for visualizing corporate events from Massive TMX Wall Street Horizon endpoint"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
