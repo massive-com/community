@@ -1,0 +1,20 @@
+[project]
+name = "corporate-events-calendar"
+version = "0.1.0"
+description = "Streamlit app for visualizing corporate events from Massive TMX endpoint"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Alex Novotny" }
+]
+license = { file = "LICENSE" }
+dependencies = [
+    "streamlit>=1.39.0",
+    "streamlit-calendar>=0.5.0",
+    "python-dotenv>=1.0.0",
+    "massive==2.0.3",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
