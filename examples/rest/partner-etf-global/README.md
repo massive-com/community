@@ -1,4 +1,4 @@
-# ETF Health Pulse Dashboard
+# ETF Health Pulse Dashboard Powered by ETF Global® + Massive
 
 <div align="center">
   <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
