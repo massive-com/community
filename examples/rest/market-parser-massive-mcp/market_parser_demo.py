@@ -72,7 +72,7 @@ async def cli_async():
     try:
         server = create_massive_mcp_server()
         agent = Agent(
-            model="anthropic:claude-sonnet-4-5-20250929",
+            model="anthropic:claude-sonnet-4-5",
             mcp_servers=[server],
             system_prompt=(
                 "You are an expert financial analyst. Note that when using Massive tools, prices are already stock split adjusted. "
