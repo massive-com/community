@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from massive import WebSocketClient
 from massive.websocket.models import Market
 
-API_KEY = "API_KEY"
+API_KEY = "oex6s6bofvpNKHR47X5pz_zApTrFSp7Q"
 
 # ========== CHANGE THIS VALUE TO SET MINIMUM PREMIUM FILTER ==========
 MIN_PREMIUM_USD = 100_000  # Only show trades with premium >= this amount
@@ -39,16 +39,16 @@ def show_trade(sym: str, price: float, size: int, ts: int, exchange=None, condit
         "\n".join(
             [
                 "",
+                pl("Premium", f"${prem:,.2f}"),
                 pl("Symbol", root),
-                pl("Contract", sym),
                 pl("Type", opt_type),
+                pl("Strike", f"${strike:,.2f}" if strike is not None else "N/A"),
                 pl("Price", f"${price:.2f}"),
                 pl("Size", f"{size} contracts"),
-                pl("Premium", f"${prem:,.2f}"),
-                pl("Strike", f"${strike:,.2f}" if strike is not None else "N/A"),
                 pl("Exchange", exchange or "N/A"),
-                pl("Timestamp", et(ts)),
                 pl("Conditions", conditions or "N/A"),
+                pl("Contract", sym),
+                pl("Timestamp", et(ts)),
                 "",
                 "------------------------",
             ]
