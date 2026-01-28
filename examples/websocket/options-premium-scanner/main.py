@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
+import argparse
+import os
 import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from massive import WebSocketClient
 from massive.websocket.models import Market
+from dotenv import load_dotenv
 
-API_KEY = "oex6s6bofvpNKHR47X5pz_zApTrFSp7Q"
+# Load environment variables from .env file
+load_dotenv()
 
-# ========== CHANGE THIS VALUE TO SET MINIMUM PREMIUM FILTER ==========
-MIN_PREMIUM_USD = 100_000  # Only show trades with premium >= this amount
-# =====================================================================
+API_KEY = os.getenv("MASSIVE_API_KEY")
+if not API_KEY:
+    raise ValueError("MASSIVE_API_KEY not found in environment variables. Please set it in your .env file.")
+
+DEFAULT_MIN_PREMIUM_USD = 100_000
 RE_FULL = re.compile(r"^([A-Z0-9]+?)(\d{6})([CP])(\d{8})$")
 
 
@@ -58,15 +64,26 @@ def show_trade(sym: str, price: float, size: int, ts: int, exchange=None, condit
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Stream options trades filtered by minimum premium.")
+    parser.add_argument(
+        "amount",
+        nargs="?",
+        type=float,
+        default=DEFAULT_MIN_PREMIUM_USD,
+        help=f"Minimum premium in USD (default: {DEFAULT_MIN_PREMIUM_USD:,.0f})",
+    )
+    args = parser.parse_args()
+    min_premium_usd = args.amount
+
     c = WebSocketClient(api_key=API_KEY, market=Market.Options)
     c.subscribe("T.*")
-    print(f"[info] connecting to options trade stream (T.*) — filter: ≥ ${MIN_PREMIUM_USD:,.0f} premium", flush=True)
+    print(f"[info] connecting to options trade stream (T.*) — filter: ≥ ${min_premium_usd:,.0f} premium", flush=True)
 
     def handler(msgs):
         for m in msgs:
             price, size = float(m.price), int(m.size)
             prem = price * size * 100
-            if prem < MIN_PREMIUM_USD:
+            if prem < min_premium_usd:
                 continue
             show_trade(
                 m.symbol,

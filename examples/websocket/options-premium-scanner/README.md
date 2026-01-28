@@ -29,7 +29,8 @@ This tool provides a fast "tape" view of live options prints:
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.10+
+- [uv](https://github.com/astral-sh/uv) package manager
 - Massive API key (**Must be on Options Advanced license type**)
 
 ## Quickstart
@@ -40,23 +41,18 @@ This tool provides a fast "tape" view of live options prints:
    cd community/examples/websocket/options-premium-scanner
    ```
 
-2. **Create and activate a virtual environment**:
+2. **Install dependencies with uv**:
    ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
+   uv sync
    ```
 
-3. **Install the Massive Python SDK**:
+3. **Set up your API key**:
    ```bash
-   pip install massive
+   cp .env.example .env
+   # Edit .env and add your MASSIVE_API_KEY
    ```
 
-4. **Set up your API key**:
-   ```bash
-   export MASSIVE_API_KEY="YOUR_API_KEY_HERE"
-   ```
-
-5. **Get a Massive API key**:
+4. **Get a Massive API key**:
    - Visit [massive.com](https://massive.com/)
    - Sign up for an account
    - Upgrade to Options Advanced
@@ -67,10 +63,14 @@ This tool provides a fast "tape" view of live options prints:
 ### Run the Scanner
 
 ```bash
-python main.py
+uv run main.py
 ```
 
-When prompted, enter a premium threshold (e.g., `50000` to see prints of $50k or larger), or leave blank to see all trades.
+By default the scanner shows only trades with premium ≥ $100,000. To use a different threshold, pass the amount after the command:
+
+```bash
+uv run main.py 10000
+```
 
 Stop the stream anytime with `Ctrl+C`.
 
@@ -133,9 +133,10 @@ Once the basic scanner is working, try these enhancements:
 
 - **Authentication or subscription errors**
   - Re-check the API key and plan first
+  - Ensure your `.env` file exists and contains `MASSIVE_API_KEY`
   - Ensure your Massive SDK version is up to date:
     ```bash
-    pip install --upgrade massive
+    uv sync --upgrade
     ```
 
 ## License
