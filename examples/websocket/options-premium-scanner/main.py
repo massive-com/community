@@ -5,7 +5,11 @@ from zoneinfo import ZoneInfo
 from massive import WebSocketClient
 from massive.websocket.models import Market
 
-API_KEY = "oex6s6bofvpNKHR47X5pz_zApTrFSp7Q"
+API_KEY = "API_KEY"
+
+# ========== CHANGE THIS VALUE TO SET MINIMUM PREMIUM FILTER ==========
+MIN_PREMIUM_USD = 100_000  # Only show trades with premium >= this amount
+# =====================================================================
 RE_FULL = re.compile(r"^([A-Z0-9]+?)(\d{6})([CP])(\d{8})$")
 
 
@@ -54,19 +58,15 @@ def show_trade(sym: str, price: float, size: int, ts: int, exchange=None, condit
 
 
 def main():
-    raw = input("Minimum Premium in USD (blank = show all): ").strip()
-    min_prem = float(raw) if raw else None
-
-    c = WebSocketClient(API_KEY, market=Market.Options)
+    c = WebSocketClient(api_key=API_KEY, market=Market.Options)
     c.subscribe("T.*")
-    f = "ALL premiums" if min_prem is None else f"≥ ${min_prem:,.0f} premium"
-    print(f"[info] connecting to options trade stream (T.*) — filter: {f}", flush=True)
+    print(f"[info] connecting to options trade stream (T.*) — filter: ≥ ${MIN_PREMIUM_USD:,.0f} premium", flush=True)
 
     def handler(msgs):
         for m in msgs:
             price, size = float(m.price), int(m.size)
             prem = price * size * 100
-            if min_prem is not None and prem < min_prem:
+            if prem < MIN_PREMIUM_USD:
                 continue
             show_trade(
                 m.symbol,
