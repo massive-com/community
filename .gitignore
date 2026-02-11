@@ -74,4 +74,5 @@ scripts/
 .log
 .DS_Store
 data/
+output/
 reports/
