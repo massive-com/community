@@ -21,6 +21,14 @@ This demo fetches recent corporate actions for a ticker and builds simple, eye�
 - **Investor-facing dashboards**
 - **Data quality checks around splits/dividends**
 
+## 📸 Example Output
+
+<img src="example/example-adjusted-vs-unadjusted.png" alt="Adjusted vs Unadjusted Price Chart" width="100%"/>
+
+<img src="example/example-splits-dividends.png" alt="Splits & Dividends Timeline" width="100%"/>
+
+The demo also can exports a flat-file style CSV if using Massive flat file capabilities — see [`example/example-unadjusted.csv`](example/example-unadjusted.csv) for a sample.
+
 ## 📋 Requirements
 
 - **Python** 3.11+
