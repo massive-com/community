@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from massive import WebSocketClient
 from massive.websocket.models import EquityTrade, Market
 
-MASSIVE_API_KEY = "APIKEY"
+MASSIVE_API_KEY = "your_massive_api_key"
 
 # TRF ID to venue name mapping
 TRF_NAMES = {
