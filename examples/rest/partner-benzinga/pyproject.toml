@@ -1,0 +1,23 @@
+[project]
+name = "benzinga-dashboard"
+version = "0.1.0"
+description = "Streamlit dashboard showcasing all Massive Benzinga endpoints"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "Alex Novotny" }
+]
+license = { file = "LICENSE" }
+dependencies = [
+  "massive>=2.0.2",
+  "streamlit>=1.39.0",
+  "streamlit-autorefresh>=1.0.1",
+  "python-dotenv>=1.0.1",
+  "plotly>=5.24.0",
+  "pandas>=2.1.0",
+  "numpy>=1.26.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
