@@ -1,33 +1,29 @@
-# Benzinga Dashboard Powered by Massive + Benzinga
+# Real-time Benzinga + Massive Dashboard
 
 <div align="center">
   <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
 </div>
 
-A comprehensive Streamlit dashboard that demonstrates all currently available Benzinga endpoints offered by Massive. This demo showcases analyst data, earnings information, news articles, and more in an interactive interface with real-time capabilities.
+A Streamlit dashboard that demonstrates how Massive's Benzinga partnership endpoints can power a real-time financial news and analytics monitor. This single-file app layers interactive visualizations, filtering, and polled auto-refresh on top of 9 Benzinga endpoints.
 
-## ✨ Highlights
+## Highlights
 
-- **8 Real-time Benzinga Endpoints** – Complete coverage of all currently available Benzinga data through Massive (all endpoints are real-time):
-  - 📰 **Real-time Benzinga News** – Real-time structured news articles with headlines, full-text content, tickers, and metadata
-  - 📊 **Analyst Ratings** – Real-time analyst ratings, rating actions, and price target changes
-  - 💡 **Analyst Insights** – Real-time insights from financial analysts with ratings, price targets, and rationale
-  - 👥 **Analyst Details** – Real-time structured data on financial analysts, including names and affiliated firms
-  - 📈 **Earnings** – Real-time earnings announcements with EPS, revenue, and analyst estimates
-  - 🎯 **Consensus Ratings** – Real-time aggregated rating distributions and price target ranges
-  - 🐂🐻 **Bulls & Bears Say** – Real-time bull and bear case summaries for publicly traded companies
-  - 🏢 **Firm Details** – Real-time structured data on analyst firms, including firm names and identifiers
-  - 📋 **Corporate Guidance** – Real-time structured earnings guidance data with projected EPS and revenue figures
+- **Real-time News Feed** -- Structured news articles rendered as styled cards with headlines, teasers, author attribution, ticker tags, and links to full text. Supports multi-ticker filtering.
+- **Analyst Insights** -- Consensus rating breakdowns, bull/bear case summaries, and individual analyst price targets with rating distribution charts.
+- **Earnings & Guidance** -- EPS actual vs estimated (line or grouped bar), surprise metrics, and corporate guidance with projected EPS/revenue figures.
+- **Analyst Activity** -- Rating action tracking (upgrades, downgrades, initiations) with bar chart visualizations.
+- **Reference Directories** -- Analyst and firm directories with top-firms-by-analyst-count charts, always visible below the main tabs.
+- **Polled Auto-refresh** -- 60-second cache TTL on all endpoints with optional 30-second polling via `streamlit-autorefresh`.
+- **Interactive Plotly Charts** -- All visualizations use a custom dark theme with the Massive blue + Benzinga navy color palette.
+- **Flexible Sidebar Filters** -- Filter by ticker, date range (last 7/30/90 days, last year, custom, or all), and per-endpoint result limit up to 500.
 
-- **Real-time Capabilities** – All endpoints support real-time data with 60-second cache TTL. News endpoint includes polling-based updates with automatic refresh every 30 seconds
-- **Interactive Visualizations** – Charts and graphs for each endpoint category including:
-  - Rating distributions (pie charts, bar charts)
-  - Time series analysis (line charts)
-  - Price target ranges (box plots)
-  - Event type distributions
-  - News article frequency over time
-- **Flexible Filtering** – Filter by ticker, date range (last 7/30/90 days, last year, custom), and more
-- **Rich Data Display** – Expandable sections for detailed views, article previews, and transcript excerpts
+<img src="./images/news.png" alt="News tab" width="100%"/>
+
+<img src="./images/insights.png" alt="Insights tab" width="100%"/>
+
+<img src="./images/activity.png" alt="Analyst Activity tab" width="100%"/>
+
+<img src="./images/guidance.png" alt="Earnings & Guidance tab" width="100%"/>
 
 ## Disclaimer
 
@@ -75,55 +71,53 @@ uv run streamlit run streamlit_app.py
 ```
 
 - The app auto-loads `.env` and also respects `st.secrets["MASSIVE_API_KEY"]` for hosted runs.
-- **Filter Data**: Use the sidebar to filter by ticker and date range. Select from preset ranges (Last 7/30/90 days, Last year) or choose "Custom" for specific dates.
-- **Explore Endpoints**: Navigate through 9 different tabs to explore all currently available Benzinga endpoints.
-- **Real-time Data**: All endpoints fetch real-time data with 60-second cache TTL. News tab includes polling-based updates with automatic refresh every 30 seconds when enabled.
-- **View Details**: Click expandable sections to view detailed information and article previews.
+- **Filter Data**: Use the sidebar to enter a ticker, select a date range, and set a result limit. The News tab supports comma-separated tickers (e.g. `AAPL, MSFT`); all other tabs use a single ticker.
+- **Explore Tabs**: Navigate the four main tabs -- News, Insights, Analyst Activity, and Earnings & Guidance -- then scroll to the Reference section for analyst/firm directories.
+- **Real-time Data**: Enable the auto-refresh toggle for 30-second polling. All endpoints use a 60-second cache TTL.
+- **View Details**: Expand "View raw data" sections in each card for the full sortable DataFrame.
 
-## 🧠 How the Demo Works
+## How the Demo Works
 
 ### 1. Data Fetching
 
-- All endpoints use the official Massive Python client with direct API calls via `_get()` method.
-- **All endpoints are real-time** - Data is cached using Streamlit's `@st.cache_data` decorator with 60-second TTL for all endpoints to support real-time updates.
-- Pagination is handled automatically where supported.
-- Error handling gracefully displays messages when entitlements are missing or API calls fail.
+- All endpoints use the official Massive Python client (`massive>=2.0.2`) via typed methods like `list_benzinga_news_v2`, `list_benzinga_ratings`, etc.
+- Each fetch function is wrapped with `@st.cache_data(ttl=60)` for a 60-second real-time cache with loading spinners.
+- Non-news endpoints accept a single `ticker` string passed directly to the API. The news endpoint supports multi-ticker queries via `tickers_any_of`.
+- Error handling catches `BadResponse` and general exceptions, logging them and returning an empty DataFrame so the UI degrades gracefully.
 
-### 2. Real-time Capabilities
+### 2. Tab Layout
 
-- **All Endpoints Support Real-time**: All 8 Benzinga endpoints provide real-time data with 60-second cache TTL.
-- **News Polling**: The News tab includes a checkbox to enable polling-based real-time updates.
-- When enabled, news data refreshes every 30 seconds automatically.
-- Uses session state to track last update time and avoid redundant API calls.
-- Shows a spinner while fetching latest news.
+| Tab | Endpoints Used | Key Visuals |
+| --- | --- | --- |
+| **News** | News | HTML news cards, top channels bar chart |
+| **Insights** | Consensus Ratings, Bulls & Bears Say, Analyst Insights | Consensus pie chart, bull/bear expanders, insight rating pie + price target metrics |
+| **Analyst Activity** | Analyst Ratings | Rating action bar chart |
+| **Earnings & Guidance** | Earnings, Corporate Guidance | EPS actual vs estimated (line or grouped bar), EPS surprise metrics, guidance EPS/revenue metrics |
+| **Reference** _(below tabs)_ | Analyst Details, Firm Details | Top firms bar chart, analyst/firm directory tables |
 
 ### 3. Visualizations
 
-Each endpoint tab includes relevant visualizations:
+All charts use a custom Plotly dark template (`massive_dark`) with the Massive blue + Benzinga navy color palette:
 
-- **Analyst Ratings**: Rating actions distribution (bar chart), ratings over time (line chart)
-- **Analyst Insights**: Rating distribution (pie chart), average/median price targets
-- **Consensus Ratings**: Consensus rating distribution (pie chart), price target ranges (box plot)
-- **Earnings**: EPS surprise metrics, actual vs estimated EPS over time (line chart)
-- **News**: Articles over time (hourly line chart), top news channels (bar chart)
+- **Consensus Ratings** -- Pie chart of rating breakdown (Strong Buy through Strong Sell)
+- **Analyst Insights** -- Pie chart of insight rating distribution + average/median price target metrics
+- **Analyst Ratings** -- Bar chart of rating actions (upgrades, downgrades, initiations, etc.)
+- **Earnings** -- EPS actual vs estimated rendered as a line chart (4+ data points) or grouped bar chart (3 or fewer), plus EPS surprise summary metrics
+- **News** -- HTML article cards with metadata and a top-10 news channels bar chart
+- **Reference** -- Top firms by analyst count bar chart
 
-### 4. Data Display
+### 4. Filtering
 
-- **DataFrames**: All endpoints display data in sortable, filterable pandas DataFrames.
-- **Expandable Sections**: 
-  - Bulls & Bears Say: Shows bull and bear cases for each ticker
-  - News: Displays article teasers with links to full articles
-- **Metrics**: Key statistics displayed as metrics at the top of each tab.
+- **Ticker**: Single ticker for Insights, Analyst Activity, and Earnings & Guidance tabs. Comma-separated tickers for the News tab.
+- **Date Range**: Presets (Last 7/30/90 days, Last year, All) or custom start/end date pickers. End dates include today's data automatically.
+- **Result Limit**: Adjustable 1-500 per endpoint (default 100).
 
-### 5. Filtering
+### 5. Real-time Capabilities
 
-- **Ticker Filter**: Optional ticker filter applied to all relevant endpoints
-- **Date Range**: 
-  - Preset options: Last 7 days, Last 30 days, Last 90 days, Last year, All
-  - Custom: Select specific start and end dates
-- Filters are applied consistently across all endpoints that support them.
+- **Cache TTL**: All `@st.cache_data` decorators use `ttl=60` seconds so data refreshes on every Streamlit rerun after the cache expires.
+- **Auto-refresh**: Optional 30-second polling via `streamlit-autorefresh` triggers a full page rerun. The 60-second TTL naturally expires, so data is at most 60 seconds stale.
 
-## ⚙️ Configuration
+## Configuration
 
 | Variable | Description |
 | --- | --- |
@@ -132,95 +126,52 @@ Each endpoint tab includes relevant visualizations:
 
 - The dashboard loads `.env` at startup and falls back to Streamlit secrets when deployed.
 - All outbound requests go through the official `massive>=2.0.2` Python client.
-- **Data Sorting**: All endpoints are sorted by relevant date fields (descending) to show most recent data first.
-- **Smart Caching**: All endpoints use 60-second cache TTL to support real-time data while minimizing redundant API calls.
-- **Error Handling**: The dashboard gracefully handles missing entitlements and displays helpful messages when Benzinga partnership is not enabled on your account.
+- **Data Sorting**: All endpoints are sorted by relevant date fields (descending) to show the most recent data first.
+- **Smart Caching**: 60-second cache TTL on every endpoint minimizes redundant API calls while keeping data fresh.
+- **Error Handling**: Missing entitlements or API errors produce in-app messages rather than crashes.
 
-## 🧪 Testing & Performance
-
-- **Caching Strategy**: 
-  - All endpoints: 60-second TTL for real-time capabilities
-- **Real-time Updates**: All endpoints provide real-time data. News tab supports polling-based updates every 30 seconds when enabled.
-- **Performance Optimizations**:
-  - Cached API responses
-  - Efficient DataFrame operations
-  - Pagination support where available
-  - Limit parameter set to 100 by default (adjustable in code)
-- **Error Handling**: All endpoints include try-except blocks with logging for debugging.
-
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 | Issue | Fix |
 | --- | --- |
 | `MASSIVE_API_KEY is missing` | Copy `.env.example` to `.env` and add your key, or supply `st.secrets`. |
-| `RuntimeError: Unable to load ...` | Usually an entitlement or rate-limit problem—check your plan and retry. |
+| `RuntimeError: Unable to load ...` | Usually an entitlement or rate-limit problem -- check your plan and retry. |
 | `NOT_AUTHORIZED` warnings | Your API key doesn't have Benzinga partnership entitlements. Visit [massive.com/partners/benzinga](https://massive.com/partners/benzinga) to upgrade. |
-| Empty charts/tables | The selected filters may not return data. Try widening the date range, removing ticker filters, or checking different endpoints. |
-| Real-time news not updating | Ensure "Enable Real-time Updates" checkbox is checked. Updates occur every 30 seconds. All endpoints refresh data every 60 seconds automatically. |
-| TLS errors when running inside certain corporate networks | Configure your system trust store or set the `REQUESTS_CA_BUNDLE` env var. |
+| Empty charts/tables | The selected filters may not return data. Try widening the date range, removing the ticker filter, or checking a different tab. |
+| Auto-refresh not updating | Make sure the auto-refresh toggle is enabled in the sidebar. Polling occurs every 30 seconds; all other data refreshes on the 60-second cache TTL. |
+| Multiple tickers show no data on non-News tabs | Only the News tab supports multi-ticker input. Enter a single ticker for Insights, Analyst Activity, and Earnings & Guidance. |
+| TLS errors inside corporate networks | Configure your system trust store or set the `REQUESTS_CA_BUNDLE` env var. |
 
-## 📊 Supported Endpoints
+## Supported Endpoints
 
-The dashboard showcases all 8 currently available Benzinga endpoints through Massive (all are real-time):
+The dashboard showcases all 9 currently available Benzinga endpoints through Massive:
 
-1. **Real-time Benzinga News** (`/benzinga/v2/news`)
-   - Real-time structured news articles
-   - Filter by ticker, date range, channels, tags, author
-   - Supports polling-based real-time updates
+| # | Endpoint | Route | Key Filters |
+| --- | --- | --- | --- |
+| 1 | **News** | `/benzinga/v2/news` | tickers, date range, channels, tags, author |
+| 2 | **Analyst Ratings** | `/benzinga/v1/ratings` | ticker, date range, firm, rating action |
+| 3 | **Analyst Insights** | `/benzinga/v1/analyst-insights` | ticker, date range |
+| 4 | **Analyst Details** | `/benzinga/v1/analyst-details` | limit |
+| 5 | **Earnings** | `/benzinga/v1/earnings` | ticker, date range, fiscal period |
+| 6 | **Consensus Ratings** | `/benzinga/v1/consensus-ratings` | ticker |
+| 7 | **Bulls & Bears Say** | `/benzinga/v1/bulls-bears-say` | ticker |
+| 8 | **Corporate Guidance** | `/benzinga/v1/corporate-guidance` | ticker, date range |
+| 9 | **Firm Details** | `/benzinga/v1/firm-details` | limit |
 
-2. **Analyst Ratings** (`/benzinga/v1/ratings`)
-   - Real-time analyst ratings and rating actions
-   - Price target changes
-   - Filter by ticker, date range, firm, rating action
-
-3. **Analyst Insights** (`/benzinga/v1/analyst-insights`)
-   - Real-time insights from financial analysts
-   - Ratings, price targets, and rationale
-   - Filter by ticker
-
-4. **Analyst Details** (`/benzinga/v1/analyst-details`)
-   - Real-time structured data on financial analysts
-   - Names, affiliated firms, historical rating activity
-   - Filter by ticker
-
-5. **Earnings** (`/benzinga/v1/earnings`)
-   - Real-time earnings announcements
-   - EPS, revenue, analyst estimates, surprises
-   - Filter by ticker, date range, fiscal period
-
-6. **Consensus Ratings** (`/benzinga/v1/consensus-ratings`)
-   - Real-time aggregated rating distributions
-   - Price target ranges
-   - Filter by ticker
-
-7. **Bulls & Bears Say** (`/benzinga/v1/bulls-bears-say`)
-   - Real-time bull and bear case summaries
-   - Filter by ticker
-
-8. **Corporate Guidance** (`/benzinga/v1/corporate-guidance`)
-   - Real-time structured earnings guidance data
-   - Projected EPS and revenue figures
-   - Filter by ticker, date range
-
-9. **Firm Details** (`/benzinga/v1/firm-details`)
-   - Real-time structured data on analyst firms
-   - Firm names and identifiers
-
-**Note:** Economic Calendar, Government Trades, and Earnings Call Transcripts endpoints are not yet available in the Python client and will be added in a future release.
-
-## 🔗 API Reference
+## API Reference
 
 This demo uses the following Massive API endpoints:
 
 - **Base URL**: `https://api.massive.com`
 - **Documentation**: [massive.com/docs/rest/partners/benzinga](https://massive.com/docs/rest/partners/benzinga)
 
-All endpoints support common query parameters:
-- `ticker` - Stock ticker symbol (where applicable)
-- `date.gte` / `date.lte` - Date range filtering (where applicable)
-- `limit` - Maximum number of results (default: 100, max: 50000)
-- `sort` - Sort order (e.g., `date.desc`, `published.desc`)
+Common query parameters across endpoints:
+- `ticker` -- Stock ticker symbol (where applicable)
+- `tickers` / `tickers.any_of` -- Multi-ticker filtering (news endpoint)
+- `date.gte` / `date.lte` -- Date range filtering (where applicable)
+- `limit` -- Maximum number of results (default: 100, max: 50000)
+- `sort` -- Sort order (e.g., `date.desc`, `published.desc`)
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](../../../LICENSE).
