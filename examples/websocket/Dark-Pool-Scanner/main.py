@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 from massive import WebSocketClient
 from massive.websocket.models import EquityTrade, Market
 
-MASSIVE_API_KEY = os.environ.get("MASSIVE_API_KEY", "YOUR_API_KEY_HERE")
+MASSIVE_API_KEY = os.environ.get("MASSIVE_API_KEY")
 MIN_NOTIONAL = 100_000
 
 TRF_NAMES = {
