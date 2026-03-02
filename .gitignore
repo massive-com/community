@@ -76,3 +76,4 @@ scripts/
 data/
 output/
 reports/
+.claude/
