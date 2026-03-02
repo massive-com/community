@@ -14,7 +14,7 @@ On February 23, 2026, the UTP and CTA SIPs began reporting fractional share quan
 
 ## Why this matters
 
-**Trades reported as zero size.** With integer-only fields, every fractional trade has a size of `0`. In the example output below, 11% of AAPL trades were fractional. Any system using the old integer `s` field treats these as zero-quantity trades, which distorts order flow analysis, VWAP calculations, and fill reporting.
+**Trades reported as zero size.** With integer-only fields, every fractional trade has a size of `0`. In the example output below, 10% of AAPL trades were fractional. Any system using the old integer `s` field treats these as zero-quantity trades, which distorts order flow analysis, VWAP calculations, and fill reporting.
 
 **Volume undercounting.** Integer truncation drops fractional volume from aggregates. The demo shows AAPL minute-bar volume as `v: 985` (integer) vs `dv: 985.002441` (decimal). The difference is small per bar, but it compounds across a full trading day and thousands of tickers.
 
@@ -53,7 +53,7 @@ This repo contains a single `main.py` with three subcommands, one per API:
 
 | Subcommand | Aliases | API | What it shows |
 |------------|---------|-----|---------------|
-| `websocket` | `ws` | WebSocket | Streams real-time trades and aggregates, collects fractional trade examples, prints a report on Ctrl+C |
+| `websocket` | `ws` | WebSocket | Streams real-time trades and aggregates for 30 seconds (configurable), saves results to `data/` as CSV |
 | `rest` | | REST | Fetches last trade, Snapshot v2, and Snapshot v3 for each ticker. Compares old integer fields to new decimal fields |
 | `flatfiles` | `flat`, `ff` | Flat Files (S3) | Downloads a partial flat file and displays rows where `size` or `volume` contain decimal values. Pass `--save` to write CSV to disk |
 
@@ -104,17 +104,18 @@ This repo contains a single `main.py` with three subcommands, one per API:
 
 ### WebSocket demo
 
-Streams real-time trades and aggregates, highlights fractional shares, and prints a summary report when you stop it.
+Streams real-time trades and aggregates, collects fractional share examples, then saves results to CSV files in the `data/` directory.
 
 ```bash
-uv run python main.py websocket                  # Default: AAPL
+uv run python main.py websocket                  # Default: AAPL, 30 seconds
 uv run python main.py ws AAPL MSFT GOOGL         # Multiple tickers (ws alias)
+uv run python main.py ws AAPL -d 60              # Collect for 60 seconds
 ```
 
-Run for 10-30 seconds during market hours, then press `Ctrl+C` to see the report. The report shows:
+The demo runs for 30 seconds by default. Use `-d` / `--duration` to change this. You can also press `Ctrl+C` to stop early. When collection finishes, the script prints a summary and saves two CSV files:
 
-- **Trades:** Side-by-side comparison of `s` (truncated integer) vs `ds` (exact decimal string) for every fractional trade captured.
-- **Aggregates:** Latest values per ticker comparing `v` vs `dv` (volume) and `av` vs `dav` (accumulated volume).
+- `data/ws_trades_{timestamp}.csv` -- fractional trades with `s` (truncated integer) vs `ds` (exact decimal string).
+- `data/ws_aggs_{timestamp}.csv` -- latest aggregate per ticker with `v` vs `dv` (volume) and `av` vs `dav` (accumulated volume).
 
 <details>
 <summary>Example output</summary>
@@ -123,53 +124,47 @@ Run for 10-30 seconds during market hours, then press `Ctrl+C` to see the report
 ==============================================================
   Massive WebSocket -- Fractional Share Precision Demo
 ==============================================================
-  Tickers: AAPL
-  Feeds:   Trades (T) + Aggregates (A)
+  Tickers:  AAPL
+  Duration: 30s
+  Feeds:    Trades (T) + Aggregates (A)
 
   New decimal fields vs old integer fields:
     Trades: ds  vs s   (exact quantity)
     Aggs:   dv  vs v   (exact volume)
             dav vs av  (exact daily accumulated volume)
 
-  Run for ~10-30s, then Ctrl+C for the report.
 ==============================================================
 
-  Collecting... 335 trades (37 fractional), 19 aggs   ^C
+  Collecting... 398 trades (40 fractional), 20 aggs  [0s left]
 
 ==============================================================
   Fractional Share Precision -- Results
 ==============================================================
-  Trades received:     335
-  Aggregates received: 19
-
-  ------------------------------------------------------------
-  TRADES: new 'ds' field
-  ------------------------------------------------------------
-  37 fractional trades (11.0% of total)
+  Trades received:     398
+  Aggregates received: 20
+  Fractional trades:   40 (10.1% of total)
 
   Time          Sym         Price      s            ds
   ------------- ------ ----------  -----  ------------
-  19:29:32.480  AAPL      $266.06      0      0.038120
-  19:29:32.480  AAPL      $266.06      0      0.037500
-  19:29:32.480  AAPL      $266.06      0      0.555146
-  19:29:32.480  AAPL      $266.09      0      0.029312
-  19:29:32.480  AAPL      $266.11      0      0.000789
-  19:29:32.480  AAPL      $266.09      0      0.007700
-  ...
-
-  's' truncates to 0 -- 'ds' shows exact quantity.
+  19:29:32.482  AAPL      $264.63      0      0.015000
+  19:29:32.483  AAPL      $264.64      0      0.037786
+  19:29:32.483  AAPL      $264.66      0      0.003211
+  19:29:32.483  AAPL      $264.62      0      0.164000
+  19:29:32.483  AAPL      $264.62      0      0.004470
+  19:29:32.483  AAPL      $264.64      0      0.003778
+  19:29:32.483  AAPL      $264.60      0      0.122340
+  19:29:32.483  AAPL      $264.61      0      0.006396
+  19:29:32.483  AAPL      $264.66      0      0.035400
+  19:29:32.483  AAPL      $264.66      0      0.001473
+  ... and 30 more (see CSV)
 
   ------------------------------------------------------------
-  AGGREGATES: new 'dv' and 'dav' fields
+  Saved files
   ------------------------------------------------------------
-  Latest per ticker:
-
-  Sym         v (int)      dv (decimal)      av (int)     dav (decimal)
-  ------ ------------  ----------------  ------------  ----------------
-  AAPL            985        985.002441    21,613,215   21613215.779505
-
-  'v'  truncates fractional volume  -- 'dv'  includes it.
-  'av' truncates accumulated volume -- 'dav' includes it.
+  data/ws_trades_20260302_132347.csv
+    40 fractional trades
+  data/ws_aggs_20260302_132347.csv
+    1 ticker snapshots
 
 ==============================================================
 ```
@@ -374,7 +369,7 @@ The flat files demo uses HTTP range requests (`bytes=0-524287`) to download only
 ## Troubleshooting
 
 - **Not seeing fractional trades in the WebSocket demo**
-  - Fractional trades are a small percentage of total volume. Run for at least 30 seconds during market hours.
+  - Fractional trades are a small percentage of total volume. Try a longer duration with `-d 60` or more.
   - Make sure the US stock market is open (9:30 AM - 4:00 PM ET, weekdays).
 
 - **WebSocket authentication errors**

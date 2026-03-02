@@ -9,7 +9,7 @@ Demonstrates the new decimal precision fields across Massive APIs:
   Flat Files:  size, volume   — now decimal in CSVs from S3
 
 Usage:
-    uv run python main.py websocket [TICKERS...]
+    uv run python main.py websocket [TICKERS...] [-d SECONDS]   (saves to data/)
     uv run python main.py rest [TICKERS...]
     uv run python main.py flatfiles [--date DATE] [--type TYPE] [--save]
 """
@@ -20,6 +20,8 @@ import io
 import json
 import os
 import sys
+import threading
+import time
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -103,8 +105,8 @@ def section(title):
 # ── WebSocket demo ──────────────────────────────────────────────
 
 
-def run_websocket(tickers):
-    """Stream real-time trades and aggregates, report on Ctrl+C."""
+def run_websocket(tickers, duration=30):
+    """Stream real-time trades and aggregates, save results when done."""
     from massive import WebSocketClient
     from massive.websocket.models import Market
 
@@ -114,6 +116,7 @@ def run_websocket(tickers):
     agg_count = 0
     fractional_trades = []
     agg_samples = []
+    start_time = time.monotonic()
 
     def handle_messages(raw_data):
         nonlocal trade_count, agg_count
@@ -146,70 +149,59 @@ def run_websocket(tickers):
             elif ev == "status":
                 continue
 
-            sys.stdout.write(
-                f"\r  Collecting... {trade_count} trades "
-                f"({len(fractional_trades)} fractional), "
-                f"{agg_count} aggs   "
-            )
-            sys.stdout.flush()
+        elapsed = time.monotonic() - start_time
+        remaining = max(0, int(duration - elapsed))
+        sys.stdout.write(
+            f"\r  Collecting... {trade_count} trades "
+            f"({len(fractional_trades)} fractional), "
+            f"{agg_count} aggs  [{remaining}s left]   "
+        )
+        sys.stdout.flush()
 
-    def print_report():
-        print("\n")
-        banner("Fractional Share Precision — Results")
-        print(f"  Trades received:     {trade_count}")
-        print(f"  Aggregates received: {agg_count}")
+    def save_results():
+        """Save collected data to CSV files in data/ directory."""
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(script_dir, "data")
+        os.makedirs(data_dir, exist_ok=True)
 
-        # ── TRADES ──
-        section("TRADES: new 'ds' field")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        saved = []
+
         if fractional_trades:
-            pct = len(fractional_trades) / trade_count * 100
-            print(f"  {len(fractional_trades)} fractional trades "
-                  f"({pct:.1f}% of total)\n")
-            print(f"  {'Time':<13} {'Sym':<6} {'Price':>10}"
-                  f"  {'s':>5}  {'ds':>12}")
-            print(f"  {'─' * 13} {'─' * 6} {'─' * 10}"
-                  f"  {'─' * 5}  {'─' * 12}")
-            for t in fractional_trades[:15]:
-                ts = fmt_time(t.get("t"))
-                sym = t.get("sym", "???")
-                p = t.get("p")
-                price = f"${p:,.2f}" if p is not None else "N/A"
-                s = str(t.get("s", ""))
-                ds = t.get("ds", "N/A")
-                print(f"  {ts:<13} {sym:<6} {price:>10}"
-                      f"  {s:>5}  {ds:>12}")
-            if len(fractional_trades) > 15:
-                print(f"  ... and {len(fractional_trades) - 15} more")
-            print("\n  's' truncates to 0 — 'ds' shows exact quantity.")
-        else:
-            print("  No fractional trades captured yet.")
+            path = os.path.join(data_dir, f"ws_trades_{timestamp}.csv")
+            with open(path, "w", newline="") as f:
+                fieldnames = ["time", "ticker", "price",
+                              "size_int", "size_decimal"]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for t in fractional_trades:
+                    writer.writerow({
+                        "time": fmt_time(t.get("t")),
+                        "ticker": t.get("sym", ""),
+                        "price": t.get("p", ""),
+                        "size_int": t.get("s", ""),
+                        "size_decimal": t.get("ds", ""),
+                    })
+            saved.append((path, f"{len(fractional_trades)} fractional trades"))
 
-        # ── AGGREGATES ──
-        section("AGGREGATES: new 'dv' and 'dav' fields")
         if agg_samples:
-            print("  Latest per ticker:\n")
-            print(f"  {'Sym':<6} {'v (int)':>12}  {'dv (decimal)':>16}"
-                  f"  {'av (int)':>12}  {'dav (decimal)':>16}")
-            print(f"  {'─' * 6} {'─' * 12}  {'─' * 16}"
-                  f"  {'─' * 12}  {'─' * 16}")
-            for a in agg_samples[:10]:
-                sym = a.get("sym", "???")
-                v = a.get("v")
-                v_str = f"{v:,}" if v is not None else "N/A"
-                dv = a.get("dv")
-                dv_str = str(dv) if dv is not None else "N/A"
-                av = a.get("av")
-                av_str = f"{av:,}" if av is not None else "N/A"
-                dav = a.get("dav")
-                dav_str = str(dav) if dav is not None else "N/A"
-                print(f"  {sym:<6} {v_str:>12}  {dv_str:>16}"
-                      f"  {av_str:>12}  {dav_str:>16}")
-            print("\n  'v'  truncates fractional volume  — 'dv'  includes it.")
-            print("  'av' truncates accumulated volume — 'dav' includes it.")
-        else:
-            print("  No aggregates captured.")
+            path = os.path.join(data_dir, f"ws_aggs_{timestamp}.csv")
+            with open(path, "w", newline="") as f:
+                fieldnames = ["ticker", "volume_int", "volume_decimal",
+                              "acc_volume_int", "acc_volume_decimal"]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for a in agg_samples:
+                    writer.writerow({
+                        "ticker": a.get("sym", ""),
+                        "volume_int": a.get("v", ""),
+                        "volume_decimal": a.get("dv", ""),
+                        "acc_volume_int": a.get("av", ""),
+                        "acc_volume_decimal": a.get("dav", ""),
+                    })
+            saved.append((path, f"{len(agg_samples)} ticker snapshots"))
 
-        print(f"\n{'=' * W}")
+        return saved
 
     subs = []
     for t in tickers:
@@ -217,17 +209,27 @@ def run_websocket(tickers):
         subs.append(f"A.{t}")
 
     banner("Massive WebSocket — Fractional Share Precision Demo")
-    print(f"  Tickers: {', '.join(tickers)}")
-    print("  Feeds:   Trades (T) + Aggregates (A)")
+    print(f"  Tickers:  {', '.join(tickers)}")
+    print(f"  Duration: {duration}s")
+    print("  Feeds:    Trades (T) + Aggregates (A)")
     print()
     print("  New decimal fields vs old integer fields:")
     print("    Trades: ds  vs s   (exact quantity)")
     print("    Aggs:   dv  vs v   (exact volume)")
     print("            dav vs av  (exact daily accumulated volume)")
+    print(f"\n{'=' * W}")
     print()
-    print("  Run for ~10-30s, then Ctrl+C for the report.")
-    print(f"{'=' * W}")
-    print()
+
+    # Auto-stop after duration by sending SIGINT from a timer thread.
+    # This reuses the existing KeyboardInterrupt handler, and the user
+    # can still Ctrl+C early if they want.
+    def _send_interrupt():
+        import signal
+        os.kill(os.getpid(), signal.SIGINT)
+
+    timer = threading.Timer(duration, _send_interrupt)
+    timer.daemon = True
+    timer.start()
 
     client = WebSocketClient(
         api_key=api_key,
@@ -239,7 +241,47 @@ def run_websocket(tickers):
     try:
         client.run(handle_messages)
     except KeyboardInterrupt:
-        print_report()
+        timer.cancel()
+
+    # ── Summary + save ──
+    print("\n")
+    banner("Fractional Share Precision — Results")
+    print(f"  Trades received:     {trade_count}")
+    print(f"  Aggregates received: {agg_count}")
+
+    if fractional_trades and trade_count > 0:
+        pct = len(fractional_trades) / trade_count * 100
+        print(f"  Fractional trades:   {len(fractional_trades)}"
+              f" ({pct:.1f}% of total)")
+    print()
+
+    if fractional_trades:
+        print(f"  {'Time':<13} {'Sym':<6} {'Price':>10}"
+              f"  {'s':>5}  {'ds':>12}")
+        print(f"  {'─' * 13} {'─' * 6} {'─' * 10}"
+              f"  {'─' * 5}  {'─' * 12}")
+        for t in fractional_trades[:10]:
+            ts = fmt_time(t.get("t"))
+            sym = t.get("sym", "???")
+            p = t.get("p")
+            price = f"${p:,.2f}" if p is not None else "N/A"
+            s = str(t.get("s", ""))
+            ds = t.get("ds", "N/A")
+            print(f"  {ts:<13} {sym:<6} {price:>10}"
+                  f"  {s:>5}  {ds:>12}")
+        if len(fractional_trades) > 10:
+            print(f"  ... and {len(fractional_trades) - 10} more (see CSV)")
+
+    saved = save_results()
+    if saved:
+        section("Saved files")
+        for path, desc in saved:
+            print(f"  {path}")
+            print(f"    {desc}")
+    else:
+        print("  No data to save (no fractional trades or aggs captured).")
+
+    print(f"\n{'=' * W}")
 
 
 # ── REST demo ───────────────────────────────────────────────────
@@ -580,6 +622,12 @@ def main():
         default=["AAPL"],
         help="Stock tickers to subscribe to (default: AAPL)",
     )
+    ws_parser.add_argument(
+        "-d", "--duration",
+        type=int,
+        default=30,
+        help="Seconds to collect data before stopping (default: 30)",
+    )
 
     # rest
     rest_parser = subparsers.add_parser(
@@ -621,7 +669,7 @@ def main():
 
     if args.command in ("websocket", "ws"):
         tickers = [t.upper() for t in args.tickers]
-        run_websocket(tickers)
+        run_websocket(tickers, duration=args.duration)
 
     elif args.command == "rest":
         tickers = [t.upper() for t in args.tickers]
