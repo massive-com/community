@@ -14,7 +14,7 @@ On February 23, 2026, the UTP and CTA SIPs began reporting fractional share quan
 
 **Truncated trade sizes.** With integer-only fields, a trade for 0.038 shares was reported as 1, and a trade for 52.12 shares was reported as 52. Sub-1-share trades were rounded up to 1, while larger trades had their fractional portion dropped. Either way, the reported quantity was wrong. The demos below include an impact analysis that shows how much volume was hidden by this truncation.
 
-**Volume undercounting.** Integer truncation drops fractional volume from aggregates. The difference compounds across a full trading day and thousands of tickers. Each demo calculates the gap between the decimal and integer volume fields so you can see the scale of undercounting.
+**Volume misreporting.** Integer truncation distorted volume on every fractional trade. The difference compounds across a full trading day and thousands of tickers. Each demo reconstructs what the old integer-only reporting would have shown and calculates the total volume and dollar impact.
 
 **Flat file schema change.** The WebSocket and REST APIs added new fields alongside existing ones, so nothing breaks. Flat files are different: the `size` and `volume` columns changed from integers to decimals in place. If your pipeline casts these columns to `int`, it will either error or silently truncate. See [Breaking vs Non-Breaking Changes](#breaking-vs-non-breaking-changes) below.
 
@@ -50,9 +50,11 @@ This repo contains a single `main.py` with three subcommands, one per API:
 
 | Subcommand | Aliases | API | What it shows |
 |------------|---------|-----|---------------|
-| `websocket` | `ws` | WebSocket | Streams real-time trades and aggregates for 30 seconds (configurable), saves results to `data/` as CSV |
-| `rest` | | REST | Fetches last trade, Snapshot v2, and Snapshot v3 for each ticker. Compares old integer fields to new decimal fields |
-| `flatfiles` | `flat`, `ff` | Flat Files (S3) | Downloads a partial flat file and displays rows where `size` or `volume` contain decimal values. Pass `--save` to write CSV to disk |
+| `websocket` | `ws` | WebSocket | Streams real-time trades, identifies fractional quantities, shows impact analysis. Saves results to `data/` as CSV |
+| `rest` | | REST | Fetches all trades for a date, identifies fractional quantities, shows net volume misreported and dollar impact. Pass `--save` to export CSV |
+| `flatfiles` | `flat`, `ff` | Flat Files (S3) | Downloads a partial flat file, identifies fractional quantities in trades and aggregates. Pass `--save` to write CSV to disk |
+
+All three modes use the same analysis: for each fractional trade, the demo computes what the old integer-only reporting would have shown (sub-1-share trades reported as 1, larger trades truncated to the integer part) and calculates the cumulative volume and dollar impact.
 
 ## Disclaimer
 
@@ -70,7 +72,7 @@ This repo contains a single `main.py` with three subcommands, one per API:
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/massive-com/community.git
-   cd community/examples/websocket/demo
+   cd community/examples/rest/fractional-share-precision
    ```
 
 2. **Install dependencies:**
@@ -101,7 +103,7 @@ This repo contains a single `main.py` with three subcommands, one per API:
 
 ### WebSocket demo
 
-Streams real-time trades and aggregates, collects fractional share examples, then saves results to CSV files in the `data/` directory.
+Streams real-time trades and aggregates, identifies fractional trades, calculates the impact of old integer-only reporting, and saves results to CSV files in the `data/` directory.
 
 ```bash
 uv run python main.py websocket                  # Default: AAPL, 30 seconds
@@ -109,9 +111,9 @@ uv run python main.py ws AAPL MSFT GOOGL         # Multiple tickers (ws alias)
 uv run python main.py ws AAPL -d 60              # Collect for 60 seconds
 ```
 
-The demo runs for 30 seconds by default. Use `-d` / `--duration` to change this. You can also press `Ctrl+C` to stop early. When collection finishes, the script prints a summary and saves two CSV files:
+The demo runs for 30 seconds by default. Use `-d` / `--duration` to change this. You can also press `Ctrl+C` to stop early. When collection finishes, the script prints a summary with fractional trade examples, impact analysis, and saves two CSV files:
 
-- `data/ws_trades_{timestamp}.csv` -- fractional trades with `s` (truncated integer) vs `ds` (exact decimal string).
+- `data/ws_trades_{timestamp}.csv` -- fractional trades with old reported size vs actual decimal size.
 - `data/ws_aggs_{timestamp}.csv` -- latest aggregate per ticker with `v` vs `dv` (volume) and `av` vs `dav` (accumulated volume).
 
 <details>
@@ -119,47 +121,47 @@ The demo runs for 30 seconds by default. Use `-d` / `--duration` to change this.
 
 ```
 ==============================================================
-  Massive WebSocket -- Fractional Share Precision Demo
+  Fractional Share Precision -- WebSocket Trade Analysis
 ==============================================================
   Tickers:  AAPL
   Duration: 30s
   Feeds:    Trades (T) + Aggregates (A)
 
-  New decimal fields vs old integer fields:
-    Trades: ds  vs s   (exact quantity)
-    Aggs:   dv  vs v   (exact volume)
-            dav vs av  (exact daily accumulated volume)
+  Before fractional precision, exchanges rounded trade sizes:
+    Sub-1-share (e.g. 0.038) -> reported as 1  (inflated)
+    Larger frac (e.g. 52.12) -> reported as 52 (deflated)
 
 ==============================================================
 
   Collecting... 1183 trades (443 fractional), 26 aggs  [0s left]
 
+
 ==============================================================
   Fractional Share Precision -- Results
 ==============================================================
-  Trades received:     1183
+  Trades received:     1,183
   Aggregates received: 26
   Fractional trades:   443 (37.4% of total)
 
-  Time          Sym         Price      s            ds
-  ------------- ------ ----------  -----  ------------
-  19:29:32.552  AAPL      $263.16      0      0.007300
-  19:29:32.552  AAPL      $263.24      0      0.002500
-  19:29:32.552  AAPL      $263.16      0      0.012800
-  19:29:32.552  AAPL      $263.21      0      0.610000
-  19:29:32.552  AAPL      $263.24      0      0.037000
-  19:29:32.552  AAPL      $263.16      0      0.007700
-  19:29:32.552  AAPL      $263.25      0      0.002500
-  19:29:32.552  AAPL      $263.16      0      0.002500
-  19:29:32.552  AAPL      $263.26      0      0.111877
-  19:29:32.552  AAPL      $263.18      0      0.003837
+  Time          Sym         Price   Old Rptd   Actual Size
+  ------------- ------ ----------  ---------  ------------
+  19:29:32.552  AAPL      $263.16          1      0.007300
+  19:29:32.552  AAPL      $263.24          1      0.002500
+  19:29:32.552  AAPL      $263.16          1      0.012800
+  19:29:32.552  AAPL      $263.21          1      0.610000
+  19:29:32.552  AAPL      $263.24          1      0.037000
+  19:29:32.552  AAPL      $263.16          1      0.007700
+  19:29:32.552  AAPL      $263.25          1      0.002500
+  19:29:32.552  AAPL      $263.16          1      0.002500
+  19:29:32.552  AAPL      $263.26          1      0.111877
+  19:29:32.552  AAPL      $263.18          1      0.003837
   ... and 433 more (see CSV)
 
-  ------------------------------------------------------------
-  Impact analysis
-  ------------------------------------------------------------
-  Shares:  50,616.28 actual, 50,604 reported  (12.28 hidden, 0.02%)
-  Dollars: $13,314,448.07 actual, $13,311,218.69 reported  ($3,229.38 hidden)
+  Impact:
+    Sub-1-share trades:   441 trades reported as 1 share (volume inflated)
+    Larger fractional:    2 trades with fraction dropped (volume deflated)
+    Net volume misreported: -405.3400 shares
+    Dollar impact:          $-106,670.83
 
   ------------------------------------------------------------
   Saved files
@@ -176,76 +178,65 @@ The demo runs for 30 seconds by default. Use `-d` / `--duration` to change this.
 
 ### REST demo
 
-Fetches point-in-time data from three REST endpoints and displays the new decimal fields.
+Fetches every trade for one or more tickers on a given date, identifies trades with fractional quantities, and shows the cumulative impact of old integer-only reporting.
 
 ```bash
-uv run python main.py rest                       # Default: AAPL
-uv run python main.py rest TSLA NVDA             # Multiple tickers
+uv run python main.py rest                              # Default: AAPL, most recent business day
+uv run python main.py rest TSLA --date 2026-03-02       # Specific ticker and date
+uv run python main.py rest TSLA NVDA --save             # Multiple tickers, export to CSV
 ```
 
-For each ticker, the demo shows:
+For each ticker, the demo:
 
-- **Last Trade:** `size` (int) vs `decimal_size` (string)
-- **Snapshot v2:** `v`/`av` (int) vs `dv`/`dav` (string) for day, minute, and previous day bars
-- **Snapshot v3:** `volume` (number) vs `decimal_volume` (string)
+- Fetches all trades via the REST trades endpoint
+- Identifies fractional trades using the `decimal_size` field
+- Reconstructs what the old integer-only reporting would have shown
+- Calculates the net volume misreported and dollar impact
+
+Pass `--save` to export fractional trades to CSV files in the `data/` directory.
 
 <details>
 <summary>Example output</summary>
 
 ```
 ==============================================================
-  Massive REST API -- Fractional Share Precision Demo
+  Fractional Share Precision -- REST Trade Analysis
 ==============================================================
+  Tickers: TSLA
+  Date:    2026-03-02
+
+  Before fractional precision, exchanges rounded trade sizes:
+    Sub-1-share (e.g. 0.038) -> reported as 1  (inflated)
+    Larger frac (e.g. 52.12) -> reported as 52 (deflated)
+==============================================================
+  Fetching trades for TSLA on 2026-03-02 ...
+  Fetched 1,400,747 trades total.
 
   ------------------------------------------------------------
-  LAST TRADE: AAPL
+  TSLA
   ------------------------------------------------------------
-  Fetching /v2/last/trade/AAPL ...
+  Total trades:      1,400,747
+  Fractional trades: 420,626 (30.0% of total)
 
-  Field                                 Value
-  ---------------------- --------------------
-  price                             $262.9213
-  size (int)                                4
-  decimal_size                            4.0
+  Time                Price  Old Rptd   Actual Size
+  -------------- ---------- --------- -------------
+  19:59:45.611      $402.97         1      0.100000
+  19:59:28.917      $402.97         1      0.045272
+  19:59:23.184      $402.95         1      0.161434
+  19:58:54.020      $402.97         1      0.506519
+  19:58:42.602      $402.98         1      0.052832
+  19:58:41.797      $402.97         1      0.000024
+  19:58:41.600      $402.98         1      0.022333
+  19:58:23.003      $402.92         1      0.030510
+  19:58:22.006      $402.92         1      0.111192
+  19:57:45.710      $402.93         1      0.004223
+  ... and 420,616 more
 
-  ------------------------------------------------------------
-  SNAPSHOT v2: AAPL
-  ------------------------------------------------------------
-  Fetching /v2/snapshot/.../tickers/AAPL ...
-
-  Day bar:
-  Field                                     Value
-  ---------------------- ------------------------
-  v (int volume)                        9,508,539
-  dv (decimal vol.)                9508539.605661
-  Volume hidden                    0.605661 shares (~$159.40 at $263.18/share)
-
-  Minute bar:
-  Field                                     Value
-  ---------------------- ------------------------
-  v (int volume)                           45,043
-  dv (decimal vol.)                  45043.757530
-  av (int acc. vol.)                    9,507,959
-  dav (decimal acc.)               9507959.574661
-  Volume hidden                    0.757530 shares (~$199.03 at $262.74/share)
-
-  Previous day:
-  Field                                     Value
-  ---------------------- ------------------------
-  v (int volume)                       41,812,553
-  dv (decimal vol.)                           N/A
-
-  ------------------------------------------------------------
-  SNAPSHOT v3: AAPL
-  ------------------------------------------------------------
-  Fetching /v3/snapshot?ticker.any_of=AAPL ...
-
-  Field                                         Value
-  -------------------------- ------------------------
-  volume (number)                           9,395,667
-  decimal_volume (string)              9395667.669121
-
-  Volume hidden: 0.669121 shares (~$176.09 at $263.16/share)
+  Impact:
+    Sub-1-share trades:   418,320 trades reported as 1 share (volume inflated)
+    Larger fractional:    2,306 trades with fraction dropped (volume deflated)
+    Net volume misreported: -400,000.5677 shares
+    Dollar impact:          $-159,965,449.27
 
 ==============================================================
 ```
@@ -254,7 +245,7 @@ For each ticker, the demo shows:
 
 ### Flat files demo
 
-Downloads a partial flat file from S3 and displays rows with decimal precision.
+Downloads a partial flat file from S3, identifies trades or aggregate bars with fractional quantities, and shows the impact of old integer-only reporting.
 
 ```bash
 uv run python main.py flatfiles                           # Default: 2 business days ago, both types
@@ -267,10 +258,7 @@ The `--save` flag writes the downloaded rows to CSV files in the current directo
 - `trades_{date}.csv` for trade data
 - `aggs_{date}.csv` for aggregate data
 
-The demo fetches only the first 512KB of each file to keep downloads fast. It shows:
-
-- **Trades:** The `size` column now contains decimal values like `0.500000` instead of whole numbers.
-- **Aggregates:** The `volume` column now contains decimal values like `150.000000`.
+The demo fetches only the first 512KB of each file to keep downloads fast. For trades, it applies the same analysis as the REST and WebSocket modes: it identifies fractional sizes, reconstructs the old reported value, and calculates the net volume and dollar impact. For aggregates, it shows bars with fractional volume and the gap between decimal and integer values.
 
 > **Note:** Flat files are not available on weekends and are typically published with a one-day delay. The script defaults to 2 business days ago to avoid requesting a file that hasn't been published yet.
 
@@ -279,55 +267,53 @@ The demo fetches only the first 512KB of each file to keep downloads fast. It sh
 
 ```
 ==============================================================
-  Massive Flat Files -- Fractional Share Precision Demo
+  Fractional Share Precision -- Flat Files Analysis
 ==============================================================
   Date:     2026-02-27
   Endpoint: https://files.massive.com
   Bucket:   flatfiles
 
-  Fields that changed from integer to decimal:
-    Trades:     size   (e.g. '0.500000')
-    Aggregates: volume (e.g. '150.000000')
+  Before fractional precision, exchanges rounded trade sizes:
+    Sub-1-share (e.g. 0.038) -> reported as 1  (inflated)
+    Larger frac (e.g. 52.12) -> reported as 52 (deflated)
+
 ==============================================================
 
   ------------------------------------------------------------
-  TRADES flat file: size field is now decimal
+  TRADES flat file (2026-02-27)
   ------------------------------------------------------------
   Downloading: us_stocks_sip/trades_v1/2026/02/2026-02-27.csv.gz (first 512KB)...
-  File columns: ['ticker', 'conditions', 'correction', 'exchange', 'id',
-    'participant_timestamp', 'price', 'sequence_number', 'sip_timestamp',
-    'size', 'tape', 'trf_id', 'trf_timestamp']
+  Rows sampled:      50
+  Fractional trades: 19 (38.0% of sample)
 
-  Showing rows where size has decimal precision:
+  Ticker       Price  Old Rptd   Actual Size
+  -------- ---------- --------- -------------
+  A           $120.97         1      0.700000
+  A           $119.42         1      0.103100
+  A           $119.42         1      0.189400
+  A           $119.37         1      0.707500
+  A           $119.29         3      3.127700
+  A           $119.80         1      0.082700
+  A           $119.84         1      0.057200
+  A           $120.26         1      0.008307
+  A           $119.78         1      0.034300
+  A           $119.82         1      0.017900
+  ... and 9 more
 
-  ticker      price            size
-  -------- ----------  --------------
-  A           $120.86       50.000000
-  A           $120.10        9.000000
-  A           $119.29        5.000000
-  A           $119.29        1.000000
-  A           $119.80        9.000000
-  A           $119.80        2.000000
-  A           $119.80        9.000000
-  A           $120.97        0.700000
-  A           $118.18        1.000000
-  A           $119.01        2.000000
-  ...
-
-  19 of 50 rows have fractional size values.
-
-  Impact across 50 rows:
-    Volume: 34,510.41 shares actual, 34,503 reported  (7.41 hidden, 0.02%)
-    Dollars: $4,127,585.15 actual, $4,126,696.30 reported  ($888.86 hidden)
+  Impact:
+    Sub-1-share trades:   17 trades reported as 1 share (volume inflated)
+    Larger fractional:    2 trades with fraction dropped (volume deflated)
+    Net volume misreported: -13.0721 shares
+    Dollar impact:          $-1,563.15
 
   ------------------------------------------------------------
-  AGGREGATES flat file: volume field is now decimal
+  AGGREGATES flat file (2026-02-27)
   ------------------------------------------------------------
   Downloading: us_stocks_sip/minute_aggs_v1/2026/02/2026-02-27.csv.gz (first 512KB)...
-  File columns: ['ticker', 'volume', 'open', 'close', 'high', 'low',
-    'window_start', 'transactions']
+  Rows sampled:           50
+  Fractional volume bars: 39 (78.0% of sample)
 
-  ticker        close            volume
+  Ticker       Close            Volume
   -------- ----------  ----------------
   A           $119.05      17798.430378
   A           $119.53        550.108103
@@ -339,13 +325,11 @@ The demo fetches only the first 512KB of each file to keep downloads fast. It sh
   A           $120.22       3506.008339
   A           $119.67       9882.143329
   A           $120.41       4253.249268
-  ...
-
-  39 of 50 rows have fractional volume values.
+  ... and 29 more
 
   Impact across 50 rows:
-    Volume: 294,409.88 shares actual, 294,399 reported  (10.88 hidden, 0.00%)
-    Dollars: $35,440,823.35 actual, $35,439,511.81 reported  ($1,311.55 hidden)
+    Volume: 294,409.88 actual, 294,399 old-reported  (+10.88 hidden)
+    Dollars: $35,440,823.35 actual, $35,439,511.81 old-reported  ($+1,311.55 hidden)
 
 ==============================================================
 ```
@@ -356,11 +340,11 @@ The demo fetches only the first 512KB of each file to keep downloads fast. It sh
 
 ### WebSocket raw mode
 
-The WebSocket demo uses `raw=True` to receive the full JSON payload, which includes the new `ds`, `dv`, and `dav` string fields. The structured client models may not yet include these fields, so raw mode gives you access to them immediately.
+The WebSocket demo uses `raw=True` to receive the full JSON payload, which includes the `ds` (decimal size) string field. It compares each trade's decimal size against what the old integer-only reporting would have shown to build the impact analysis.
 
-### REST raw mode
+### REST trade analysis
 
-The REST demo also uses `raw=True` for snapshot calls to access `dv`, `dav`, and `decimal_volume` directly from the JSON response before the client library adds typed support.
+The REST demo fetches all trades for a ticker on a given date using `list_trades()`. For each trade, it reads the `decimal_size` field and computes what the old integer-only reporting would have shown: sub-1-share trades rounded up to 1, larger trades truncated to the integer part. The difference is accumulated to produce the net volume and dollar impact.
 
 ### Flat file partial downloads
 
@@ -384,8 +368,9 @@ The flat files demo uses HTTP range requests (`bytes=0-524287`) to download only
   - Verify `MASSIVE_API_KEY` is set correctly in `.env`.
   - Check that your plan includes real-time stock data.
 
-- **REST demo shows N/A for decimal fields**
-  - The new fields may not appear outside of market hours or if the ticker has no recent trades.
+- **REST demo returns zero fractional trades**
+  - Some tickers have fewer fractional trades than others. Try a popular retail ticker like TSLA or AAPL.
+  - Make sure the date is a recent business day. Use `--date YYYY-MM-DD` to specify.
   - Make sure your Massive SDK is up to date: `uv sync --upgrade`
 
 - **Flat files demo returns "File not found"**

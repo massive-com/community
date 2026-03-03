@@ -2,15 +2,13 @@
 """
 Fractional Share Precision Demo
 ================================
-Demonstrates the new decimal precision fields across Massive APIs:
-
-  WebSocket:   ds, dv, dav   — real-time streaming
-  REST:        decimal_size, dv, dav, decimal_volume — point-in-time
-  Flat Files:  size, volume   — now decimal in CSVs from S3
+Shows how fractional share precision was previously lost in trade reporting.
+Fetches trades across Massive APIs (WebSocket, REST, Flat Files), identifies
+trades with fractional volume, and quantifies the information that was hidden.
 
 Usage:
-    uv run python main.py websocket [TICKERS...] [-d SECONDS]   (saves to data/)
-    uv run python main.py rest [TICKERS...]
+    uv run python main.py websocket [TICKERS...] [-d SECONDS]
+    uv run python main.py rest [TICKERS...] [--date YYYY-MM-DD] [--save]
     uv run python main.py flatfiles [--date DATE] [--type TYPE] [--save]
 """
 import argparse
@@ -102,11 +100,49 @@ def section(title):
     print(f"  {'─' * (W - 2)}")
 
 
+def most_recent_business_day():
+    """Return the most recent completed business day (weekday)."""
+    d = date.today()
+    d -= timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    return d
+
+
+def old_reported_size(actual_size):
+    """Compute what exchanges used to report before fractional precision.
+    Sub-1-share trades (e.g. 0.038) were rounded UP to 1.
+    Larger trades (e.g. 52.12) had the fractional portion DROPPED (truncated).
+    """
+    if actual_size < 1.0:
+        return 1
+    return int(actual_size)
+
+
+def rounding_explainer():
+    """Print the standard explanation of old rounding behavior."""
+    print()
+    print("  Before fractional precision, exchanges rounded trade sizes:")
+    print("    Sub-1-share (e.g. 0.038) \u2192 reported as 1  (inflated)")
+    print("    Larger frac (e.g. 52.12) \u2192 reported as 52 (deflated)")
+
+
+def print_impact(sub_one, larger_frac, net_misreported, dollar_impact):
+    """Print the standard impact summary block."""
+    print("\n  Impact:")
+    print(f"    Sub-1-share trades:   {sub_one:,} trades reported as 1 share"
+          f" (volume inflated)")
+    print(f"    Larger fractional:    {larger_frac:,} trades with fraction dropped"
+          f" (volume deflated)")
+    print(f"    Net volume misreported: {net_misreported:+,.4f} shares")
+    print(f"    Dollar impact:          ${dollar_impact:+,.2f}")
+
+
 # ── WebSocket demo ──────────────────────────────────────────────
 
 
 def run_websocket(tickers, duration=30):
-    """Stream real-time trades and aggregates, save results when done."""
+    """Stream real-time trades, identify fractional precision, save results."""
     from massive import WebSocketClient
     from massive.websocket.models import Market
 
@@ -116,14 +152,17 @@ def run_websocket(tickers, duration=30):
     agg_count = 0
     fractional_trades = []
     agg_samples = []
-    total_volume_ds = 0.0
-    total_volume_s = 0
-    total_dollar_ds = 0.0
-    total_dollar_s = 0.0
+    sub_one_count = 0
+    larger_frac_count = 0
+    actual_frac_volume = 0.0
+    reported_frac_volume = 0.0
+    dollar_impact = 0.0
     start_time = time.monotonic()
 
     def handle_messages(raw_data):
-        nonlocal trade_count, agg_count, total_volume_ds, total_volume_s, total_dollar_ds, total_dollar_s
+        nonlocal trade_count, agg_count
+        nonlocal sub_one_count, larger_frac_count
+        nonlocal actual_frac_volume, reported_frac_volume, dollar_impact
 
         msgs = json.loads(raw_data)
         for msg in msgs:
@@ -132,24 +171,36 @@ def run_websocket(tickers, duration=30):
             if ev == "T":
                 trade_count += 1
                 ds = msg.get("ds")
-                s = msg.get("s")
                 if isinstance(ds, str):
                     ds = ds.strip()
                     msg["ds"] = ds
-                if ds is not None and s is not None:
+                if ds is not None:
                     try:
-                        ds_f = float(ds)
-                        s_i = int(s)
-                        total_volume_ds += ds_f
-                        total_volume_s += s_i
-                        p = msg.get("p")
-                        if p is not None:
-                            total_dollar_ds += p * ds_f
-                            total_dollar_s += p * s_i
+                        actual = float(ds)
+                        if actual != int(actual):
+                            reported = old_reported_size(actual)
+                            p = msg.get("p")
+                            price = float(p) if p is not None else 0.0
+                            hidden = actual - reported
+
+                            fractional_trades.append({
+                                "time": msg.get("t"),
+                                "ticker": msg.get("sym", "???"),
+                                "price": price,
+                                "actual_size": actual,
+                                "reported_size": reported,
+                            })
+
+                            actual_frac_volume += actual
+                            reported_frac_volume += reported
+                            dollar_impact += hidden * price
+
+                            if actual < 1.0:
+                                sub_one_count += 1
+                            else:
+                                larger_frac_count += 1
                     except (ValueError, TypeError):
                         pass
-                    if float(ds) != float(s):
-                        fractional_trades.append(msg)
 
             elif ev in ("A", "AM"):
                 agg_count += 1
@@ -186,16 +237,20 @@ def run_websocket(tickers, duration=30):
             path = os.path.join(data_dir, f"ws_trades_{timestamp}.csv")
             with open(path, "w", newline="") as f:
                 fieldnames = ["time", "ticker", "price",
-                              "size_int", "size_decimal"]
+                              "reported_size", "actual_size",
+                              "hidden_shares", "hidden_value"]
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 for t in fractional_trades:
+                    hidden = t["actual_size"] - t["reported_size"]
                     writer.writerow({
-                        "time": fmt_time(t.get("t")),
-                        "ticker": t.get("sym", ""),
-                        "price": t.get("p", ""),
-                        "size_int": t.get("s", ""),
-                        "size_decimal": t.get("ds", ""),
+                        "time": fmt_time(t["time"]),
+                        "ticker": t["ticker"],
+                        "price": f"{t['price']:.4f}",
+                        "reported_size": t["reported_size"],
+                        "actual_size": f"{t['actual_size']:.6f}",
+                        "hidden_shares": f"{hidden:.6f}",
+                        "hidden_value": f"{hidden * t['price']:.4f}",
                     })
             saved.append((path, f"{len(fractional_trades)} fractional trades"))
 
@@ -223,15 +278,11 @@ def run_websocket(tickers, duration=30):
         subs.append(f"T.{t}")
         subs.append(f"A.{t}")
 
-    banner("Massive WebSocket — Fractional Share Precision Demo")
+    banner("Fractional Share Precision \u2014 WebSocket Trade Analysis")
     print(f"  Tickers:  {', '.join(tickers)}")
     print(f"  Duration: {duration}s")
-    print("  Feeds:    Trades (T) + Aggregates (A)")
-    print()
-    print("  New decimal fields vs old integer fields:")
-    print("    Trades: ds  vs s   (exact quantity)")
-    print("    Aggs:   dv  vs v   (exact volume)")
-    print("            dav vs av  (exact daily accumulated volume)")
+    print(f"  Feeds:    Trades (T) + Aggregates (A)")
+    rounding_explainer()
     print(f"\n{'=' * W}")
     print()
 
@@ -258,49 +309,36 @@ def run_websocket(tickers, duration=30):
     except KeyboardInterrupt:
         timer.cancel()
 
-    # ── Summary + save ──
+    # ── Results ──
     print("\n")
-    banner("Fractional Share Precision — Results")
-    print(f"  Trades received:     {trade_count}")
-    print(f"  Aggregates received: {agg_count}")
-
-    if fractional_trades and trade_count > 0:
-        pct = len(fractional_trades) / trade_count * 100
-        print(f"  Fractional trades:   {len(fractional_trades)}"
-              f" ({pct:.1f}% of total)")
-    print()
+    banner("Fractional Share Precision \u2014 Results")
+    print(f"  Trades received:     {trade_count:,}")
+    print(f"  Aggregates received: {agg_count:,}")
 
     if fractional_trades:
-        print(f"  {'Time':<13} {'Sym':<6} {'Price':>10}"
-              f"  {'s':>5}  {'ds':>12}")
+        frac_count = len(fractional_trades)
+        pct = frac_count / trade_count * 100
+        print(f"  Fractional trades:   {frac_count:,} ({pct:.1f}% of total)")
+
+    if fractional_trades:
+        print(f"\n  {'Time':<13} {'Sym':<6} {'Price':>10}"
+              f"  {'Old Rptd':>9}  {'Actual Size':>12}")
         print(f"  {'─' * 13} {'─' * 6} {'─' * 10}"
-              f"  {'─' * 5}  {'─' * 12}")
+              f"  {'─' * 9}  {'─' * 12}")
         for t in fractional_trades[:10]:
-            ts = fmt_time(t.get("t"))
-            sym = t.get("sym", "???")
-            p = t.get("p")
-            price = f"${p:,.2f}" if p is not None else "N/A"
-            s = str(t.get("s", ""))
-            ds = t.get("ds", "N/A")
+            ts = fmt_time(t["time"])
+            sym = t["ticker"]
+            price = f"${t['price']:,.2f}" if t["price"] else "N/A"
+            reported = str(t["reported_size"])
+            actual = f"{t['actual_size']:.6f}"
             print(f"  {ts:<13} {sym:<6} {price:>10}"
-                  f"  {s:>5}  {ds:>12}")
+                  f"  {reported:>9}  {actual:>12}")
         if len(fractional_trades) > 10:
-            print(f"  ... and {len(fractional_trades) - 10} more (see CSV)")
+            print(f"  ... and {len(fractional_trades) - 10:,} more (see CSV)")
 
-    # ── Impact analysis ──
-    if total_volume_ds > 0:
-        section("Impact analysis")
-        vol_hidden = total_volume_ds - total_volume_s
-        pct_hidden = (vol_hidden / total_volume_ds) * 100
-
-        print(f"  Shares:  {total_volume_ds:,.2f} actual,"
-              f" {total_volume_s:,} reported"
-              f"  ({vol_hidden:,.2f} hidden, {pct_hidden:.2f}%)")
-        if total_dollar_ds > 0:
-            dollar_hidden = total_dollar_ds - total_dollar_s
-            print(f"  Dollars: ${total_dollar_ds:,.2f} actual,"
-                  f" ${total_dollar_s:,.2f} reported"
-                  f"  (${dollar_hidden:,.2f} hidden)")
+        net_misreported = actual_frac_volume - reported_frac_volume
+        print_impact(sub_one_count, larger_frac_count,
+                     net_misreported, dollar_impact)
 
     saved = save_results()
     if saved:
@@ -309,7 +347,7 @@ def run_websocket(tickers, duration=30):
             print(f"  {path}")
             print(f"    {desc}")
     else:
-        print("  No data to save (no fractional trades or aggs captured).")
+        print("\n  No data to save (no fractional trades or aggs captured).")
 
     print(f"\n{'=' * W}")
 
@@ -317,150 +355,203 @@ def run_websocket(tickers, duration=30):
 # ── REST demo ───────────────────────────────────────────────────
 
 
-def run_rest(tickers):
-    """Fetch last trade, snapshot v2, and snapshot v3 for each ticker."""
+def fetch_and_analyze(client, ticker, trade_date):
+    """Fetch all trades for a ticker on a date, return analysis dict."""
+    print(f"  Fetching trades for {ticker} on {trade_date} ...")
+
+    fractional_trades = []
+    total_count = 0
+    sub_one_count = 0
+    larger_frac_count = 0
+    actual_frac_volume = 0.0
+    reported_frac_volume = 0.0
+    dollar_impact = 0.0
+
+    for t in client.list_trades(ticker, timestamp=str(trade_date), limit=50000):
+        total_count += 1
+        ds = t.decimal_size
+        if ds is None:
+            continue
+
+        try:
+            actual = float(ds)
+        except (ValueError, TypeError):
+            continue
+
+        if actual != int(actual):
+            reported = old_reported_size(actual)
+            price = float(t.price) if t.price is not None else 0.0
+            hidden = actual - reported
+            hidden_value = hidden * price
+
+            fractional_trades.append({
+                "time": t.sip_timestamp,
+                "price": price,
+                "actual_size": actual,
+                "reported_size": reported,
+                "hidden_shares": hidden,
+                "hidden_value": hidden_value,
+            })
+
+            actual_frac_volume += actual
+            reported_frac_volume += reported
+            dollar_impact += hidden_value
+
+            if actual < 1.0:
+                sub_one_count += 1
+            else:
+                larger_frac_count += 1
+
+        if total_count % 10000 == 0:
+            sys.stdout.write(f"\r  Fetched {total_count:,} trades so far...")
+            sys.stdout.flush()
+
+    if total_count >= 10000:
+        sys.stdout.write("\r" + " " * 50 + "\r")
+        sys.stdout.flush()
+
+    print(f"  Fetched {total_count:,} trades total.")
+
+    return {
+        "ticker": ticker,
+        "total_count": total_count,
+        "fractional_trades": fractional_trades,
+        "fractional_count": len(fractional_trades),
+        "sub_one_count": sub_one_count,
+        "larger_frac_count": larger_frac_count,
+        "actual_frac_volume": actual_frac_volume,
+        "reported_frac_volume": reported_frac_volume,
+        "dollar_impact": dollar_impact,
+    }
+
+
+def print_ticker_results(result):
+    """Print analysis results for a single ticker."""
+    ticker = result["ticker"]
+    total = result["total_count"]
+    frac_count = result["fractional_count"]
+    frac_trades = result["fractional_trades"]
+
+    section(ticker)
+
+    print(f"  Total trades:      {total:,}")
+
+    if total > 0:
+        pct = frac_count / total * 100
+        print(f"  Fractional trades: {frac_count:,} ({pct:.1f}% of total)")
+    else:
+        print(f"  Fractional trades: {frac_count:,}")
+        return
+
+    if not frac_trades:
+        print("\n  No fractional trades found.")
+        return
+
+    # Example trades table
+    print(f"\n  {'Time':<14} {'Price':>10} {'Old Rptd':>9} {'Actual Size':>13}")
+    print(f"  {'─' * 14} {'─' * 10} {'─' * 9} {'─' * 13}")
+
+    for ft in frac_trades[:10]:
+        ts = fmt_time(ft["time"])
+        price = f"${ft['price']:,.2f}" if ft["price"] else "N/A"
+        reported = str(ft["reported_size"])
+        actual = f"{ft['actual_size']:.6f}"
+        print(f"  {ts:<14} {price:>10} {reported:>9} {actual:>13}")
+
+    if len(frac_trades) > 10:
+        print(f"  ... and {len(frac_trades) - 10:,} more")
+
+    # Impact summary
+    net_misreported = result["actual_frac_volume"] - result["reported_frac_volume"]
+    print_impact(
+        result["sub_one_count"],
+        result["larger_frac_count"],
+        net_misreported,
+        result["dollar_impact"],
+    )
+
+
+def save_fractional_csv(result, trade_date):
+    """Save fractional trades to CSV in data/ directory."""
+    ticker = result["ticker"]
+    frac_trades = result["fractional_trades"]
+    if not frac_trades:
+        return None
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(script_dir, "data")
+    os.makedirs(data_dir, exist_ok=True)
+
+    filename = f"fractional_trades_{ticker}_{trade_date}.csv"
+    path = os.path.join(data_dir, filename)
+
+    with open(path, "w", newline="") as f:
+        fieldnames = [
+            "time", "ticker", "price", "reported_size",
+            "actual_size", "hidden_shares", "hidden_value",
+        ]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for ft in frac_trades:
+            writer.writerow({
+                "time": fmt_time(ft["time"]),
+                "ticker": ticker,
+                "price": f"{ft['price']:.4f}",
+                "reported_size": ft["reported_size"],
+                "actual_size": f"{ft['actual_size']:.6f}",
+                "hidden_shares": f"{ft['hidden_shares']:.6f}",
+                "hidden_value": f"{ft['hidden_value']:.4f}",
+            })
+
+    return path
+
+
+def run_rest(tickers, trade_date, save=False):
+    """Fetch all trades for each ticker, analyze fractional precision."""
     from massive import RESTClient
 
     api_key = get_api_key()
+    client = RESTClient(api_key=api_key, connect_timeout=30, read_timeout=60)
 
-    client = RESTClient(
-        api_key=api_key,
-        connect_timeout=30,
-        read_timeout=60,
-    )
+    banner("Fractional Share Precision \u2014 REST Trade Analysis")
+    print(f"  Tickers: {', '.join(tickers)}")
+    print(f"  Date:    {trade_date}")
+    rounding_explainer()
+    print(f"{'=' * W}")
 
-    banner("Massive REST API — Fractional Share Precision Demo")
-
+    results = []
     for ticker in tickers:
+        result = fetch_and_analyze(client, ticker, trade_date)
+        results.append(result)
+        print_ticker_results(result)
 
-        # ── Last Trade ──
-        section(f"LAST TRADE: {ticker}")
+    # Grand total (if multiple tickers)
+    if len(results) > 1:
+        section("GRAND TOTAL")
+        total_trades = sum(r["total_count"] for r in results)
+        total_frac = sum(r["fractional_count"] for r in results)
+        total_sub_one = sum(r["sub_one_count"] for r in results)
+        total_larger = sum(r["larger_frac_count"] for r in results)
+        total_actual = sum(r["actual_frac_volume"] for r in results)
+        total_reported = sum(r["reported_frac_volume"] for r in results)
+        total_dollar = sum(r["dollar_impact"] for r in results)
+        net = total_actual - total_reported
 
-        print(f"  Fetching /v2/last/trade/{ticker} ...")
-        trade = client.get_last_trade(ticker)
+        pct = (total_frac / total_trades * 100) if total_trades else 0
+        print(f"  Trades analyzed:        {total_trades:,}")
+        print(f"  Fractional trades:      {total_frac:,} ({pct:.1f}%)")
+        print_impact(total_sub_one, total_larger, net, total_dollar)
 
-        price = f"${trade.price:,.4f}" if trade.price is not None else "N/A"
-        size = trade.size if trade.size is not None else "N/A"
-        decimal_size = (
-            trade.fractional_shares
-            if trade.fractional_shares is not None
-            else "N/A"
-        )
-
-        print(f"\n  {'Field':<22} {'Value':>20}")
-        print(f"  {'─' * 22} {'─' * 20}")
-        print(f"  {'price':<22} {price:>20}")
-        print(f"  {'size (int)':<22} {str(size):>20}")
-        print(f"  {'decimal_size':<22} {decimal_size:>20}")
-
-        if decimal_size != "N/A" and size is not None:
-            try:
-                ds_f = float(decimal_size)
-                s_f = float(size)
-                if ds_f != s_f:
-                    hidden_qty = ds_f - s_f
-                    price_f = trade.price if trade.price is not None else 0
-                    hidden_dollar = abs(hidden_qty) * price_f
-                    print(f"\n  Precision gap:")
-                    print(f"    Actual quantity:    {decimal_size}")
-                    print(f"    Reported as (int):  {size}")
-                    print(f"    Hidden quantity:    {hidden_qty:+.6f}")
-                    print(f"    Dollar impact:     ${hidden_dollar:,.2f}")
-            except ValueError:
-                pass
-
-        # ── Snapshot v2 ──
-        section(f"SNAPSHOT v2: {ticker}")
-
-        print(f"  Fetching /v2/snapshot/.../tickers/{ticker} ...")
-        resp = client.get_snapshot_ticker("stocks", ticker, raw=True)
-        data = json.loads(resp.data.decode("utf-8"))
-        snap = data.get("ticker", {})
-
-        day = snap.get("day", {})
-        minute = snap.get("min", {})
-        prev = snap.get("prevDay", {})
-
-        def show_vol(label, vol_section, ref_price=None):
-            v = vol_section.get("v")
-            dv = vol_section.get("dv")
-            av = vol_section.get("av")
-            dav = vol_section.get("dav")
-
-            print(f"\n  {label}:")
-            print(f"  {'Field':<22} {'Value':>24}")
-            print(f"  {'─' * 22} {'─' * 24}")
-            v_str = f"{v:,.0f}" if v is not None else "N/A"
-            print(f"  {'v (int volume)':<22} {v_str:>24}")
-            dv_str = str(dv) if dv is not None else "N/A"
-            print(f"  {'dv (decimal vol.)':<22} {dv_str:>24}")
-            if av is not None or dav is not None:
-                av_str = f"{av:,.0f}" if av is not None else "N/A"
-                print(f"  {'av (int acc. vol.)':<22} {av_str:>24}")
-                dav_str = str(dav) if dav is not None else "N/A"
-                print(f"  {'dav (decimal acc.)':<22} {dav_str:>24}")
-
-            # Volume hidden
-            if dv is not None and v is not None:
-                try:
-                    dv_f = float(dv)
-                    gap = dv_f - float(v)
-                    pct = (gap / dv_f * 100) if dv_f else 0
-                    dollar_str = ""
-                    if ref_price is not None and ref_price > 0:
-                        dollar_str = f" (~${gap * ref_price:,.2f} at ${ref_price:,.2f}/share)"
-                    print(f"  {'Volume hidden':<22} {gap:.6f} shares{dollar_str}")
-                except (ValueError, TypeError):
-                    pass
-
-        # Use VWAP from each bar as reference price, fall back to trade price
-        trade_price = trade.price if trade.price is not None else None
-        day_ref = day.get("vw") or trade_price
-        min_ref = minute.get("vw") or trade_price
-        prev_ref = prev.get("vw") or trade_price
-
-        show_vol("Day bar", day, ref_price=day_ref)
-        show_vol("Minute bar", minute, ref_price=min_ref)
-        show_vol("Previous day", prev, ref_price=prev_ref)
-
-        # ── Snapshot v3 ──
-        section(f"SNAPSHOT v3: {ticker}")
-
-        print(f"  Fetching /v3/snapshot?ticker.any_of={ticker} ...")
-        v3_resp = client.list_universal_snapshots(
-            ticker_any_of=[ticker], raw=True
-        )
-        v3_data = json.loads(v3_resp.data.decode("utf-8"))
-        v3_results = v3_data.get("results", [])
-
-        if v3_results:
-            v3_snap = v3_results[0]
-            session = v3_snap.get("session", {})
-            v = session.get("volume")
-            dv = session.get("decimal_volume")
-
-            print(f"\n  {'Field':<26} {'Value':>24}")
-            print(f"  {'─' * 26} {'─' * 24}")
-            v_str = f"{v:,.0f}" if v is not None else "N/A"
-            print(f"  {'volume (number)':<26} {v_str:>24}")
-            dv_str = str(dv) if dv is not None else "N/A"
-            print(f"  {'decimal_volume (string)':<26} {dv_str:>24}")
-
-            if dv is not None and v is not None:
-                try:
-                    dv_f = float(dv)
-                    gap = dv_f - float(v)
-                    pct = (gap / dv_f * 100) if dv_f else 0
-                    close_price = session.get("close")
-                    dollar_str = ""
-                    if close_price is not None and close_price > 0:
-                        dollar_str = f" (~${gap * close_price:,.2f} at ${close_price:,.2f}/share)"
-                    print(f"\n  Volume hidden: {gap:.6f} shares{dollar_str}")
-                except (ValueError, TypeError):
-                    print(f"\n  volume truncates to {v:,.0f}"
-                          f", decimal_volume shows exact: {dv}")
-        else:
-            print(f"  No v3 snapshot data for {ticker}.")
+    # CSV export
+    if save:
+        section("Saved files")
+        for result in results:
+            path = save_fractional_csv(result, trade_date)
+            if path:
+                print(f"  {path}")
+                print(f"    {result['fractional_count']:,} fractional trades")
+            else:
+                print(f"  {result['ticker']}: no fractional trades to save")
 
     print(f"\n{'=' * W}")
 
@@ -522,13 +613,13 @@ def _file_not_found_hint(file_date):
 
 
 def demo_trades(s3, file_date, save=False):
-    """Show that the trades flat file size field now has decimal values."""
+    """Show fractional precision impact in the trades flat file."""
     year = file_date.strftime("%Y")
     month = file_date.strftime("%m")
     key = (f"us_stocks_sip/trades_v1/"
            f"{year}/{month}/{file_date.isoformat()}.csv.gz")
 
-    section("TRADES flat file: size field is now decimal")
+    section(f"TRADES flat file ({file_date})")
 
     try:
         rows = download_and_read(s3, key)
@@ -544,9 +635,6 @@ def demo_trades(s3, file_date, save=False):
     if not rows:
         print("  No data in file.")
         return
-
-    print(f"  File columns: {list(rows[0].keys())}")
-    print("\n  Showing rows where size has decimal precision:\n")
 
     size_col = None
     for col in rows[0].keys():
@@ -558,71 +646,88 @@ def demo_trades(s3, file_date, save=False):
         print("  'size' column not found in file.")
         return
 
-    print(f"  {'ticker':<8} {'price':>10}  {'size':>14}")
-    print(f"  {'─' * 8} {'─' * 10}  {'─' * 14}")
+    # Analyze all rows
+    fractional_rows = []
+    sub_one_count = 0
+    larger_frac_count = 0
+    actual_frac_volume = 0.0
+    reported_frac_volume = 0.0
+    dollar_impact = 0.0
 
-    shown = 0
-    fractional = 0
-    total_decimal = 0.0
-    total_int = 0
-    total_dollar_decimal = 0.0
-    total_dollar_int = 0.0
     for row in rows:
         size_val = row.get(size_col, "")
         ticker = row.get("ticker", row.get("sym", "???"))
-        price = row.get("price", row.get("p", "N/A"))
+        price_str = row.get("price", row.get("p", "0"))
 
         try:
-            size_f = float(size_val)
-            total_decimal += size_f
-            total_int += int(size_f)
-            if size_f != int(size_f):
-                fractional += 1
-            try:
-                price_f = float(price)
-                total_dollar_decimal += price_f * size_f
-                total_dollar_int += price_f * int(size_f)
-            except (ValueError, TypeError):
-                pass
+            actual = float(size_val)
         except (ValueError, TypeError):
-            pass
+            continue
 
-        if shown < 20:
+        if actual != int(actual):
+            reported = old_reported_size(actual)
             try:
-                p_str = f"${float(price):,.2f}"
+                price = float(price_str)
             except (ValueError, TypeError):
-                p_str = str(price)
-            print(f"  {ticker:<8} {p_str:>10}  {size_val:>14}")
-            shown += 1
+                price = 0.0
+            hidden = actual - reported
 
-    if fractional:
-        print(f"\n  {fractional} of {len(rows)} rows have"
-              " fractional size values.")
+            fractional_rows.append({
+                "ticker": ticker,
+                "price": price,
+                "actual_size": actual,
+                "reported_size": reported,
+            })
 
-    vol_hidden = total_decimal - total_int
-    pct = (vol_hidden / total_decimal * 100) if total_decimal else 0
-    print(f"\n  Impact across {len(rows)} rows:")
-    print(f"    Volume: {total_decimal:,.2f} shares actual,"
-          f" {total_int:,} reported"
-          f"  ({vol_hidden:,.2f} hidden, {pct:.2f}%)")
-    if total_dollar_decimal > 0:
-        dollar_hidden = total_dollar_decimal - total_dollar_int
-        print(f"    Dollars: ${total_dollar_decimal:,.2f} actual,"
-              f" ${total_dollar_int:,.2f} reported"
-              f"  (${dollar_hidden:,.2f} hidden)")
+            actual_frac_volume += actual
+            reported_frac_volume += reported
+            dollar_impact += hidden * price
+
+            if actual < 1.0:
+                sub_one_count += 1
+            else:
+                larger_frac_count += 1
+
+    total = len(rows)
+    frac_count = len(fractional_rows)
+    print(f"  Rows sampled:      {total}")
+
+    if total > 0 and frac_count > 0:
+        pct = frac_count / total * 100
+        print(f"  Fractional trades: {frac_count} ({pct:.1f}% of sample)")
+    else:
+        print(f"  Fractional trades: {frac_count}")
+
+    if fractional_rows:
+        print(f"\n  {'Ticker':<8} {'Price':>10} {'Old Rptd':>9} {'Actual Size':>13}")
+        print(f"  {'─' * 8} {'─' * 10} {'─' * 9} {'─' * 13}")
+
+        for ft in fractional_rows[:10]:
+            ticker = ft["ticker"]
+            price = f"${ft['price']:,.2f}" if ft["price"] else "N/A"
+            reported = str(ft["reported_size"])
+            actual = f"{ft['actual_size']:.6f}"
+            print(f"  {ticker:<8} {price:>10} {reported:>9} {actual:>13}")
+
+        if len(fractional_rows) > 10:
+            print(f"  ... and {len(fractional_rows) - 10} more")
+
+        net_misreported = actual_frac_volume - reported_frac_volume
+        print_impact(sub_one_count, larger_frac_count,
+                     net_misreported, dollar_impact)
 
     if save:
         save_rows_to_csv(rows, f"trades_{file_date.isoformat()}.csv")
 
 
 def demo_aggs(s3, file_date, save=False):
-    """Show that the aggregates flat file volume field has decimal values."""
+    """Show fractional precision impact in the aggregates flat file."""
     year = file_date.strftime("%Y")
     month = file_date.strftime("%m")
     key = (f"us_stocks_sip/minute_aggs_v1/"
            f"{year}/{month}/{file_date.isoformat()}.csv.gz")
 
-    section("AGGREGATES flat file: volume field is now decimal")
+    section(f"AGGREGATES flat file ({file_date})")
 
     try:
         rows = download_and_read(s3, key)
@@ -639,8 +744,6 @@ def demo_aggs(s3, file_date, save=False):
         print("  No data in file.")
         return
 
-    print(f"  File columns: {list(rows[0].keys())}")
-
     vol_col = None
     for col in rows[0].keys():
         if col.lower() == "volume":
@@ -651,74 +754,88 @@ def demo_aggs(s3, file_date, save=False):
         print("  'volume' column not found in file.")
         return
 
-    print(f"\n  {'ticker':<8} {'close':>10}  {'volume':>16}")
-    print(f"  {'─' * 8} {'─' * 10}  {'─' * 16}")
-
-    shown = 0
-    fractional = 0
+    # Analyze all rows
+    fractional_rows = []
     total_decimal = 0.0
     total_int = 0
     total_dollar_decimal = 0.0
     total_dollar_int = 0.0
+
     for row in rows:
         vol_val = row.get(vol_col, "")
         ticker = row.get("ticker", row.get("sym", "???"))
-        close = row.get("close", row.get("c", "N/A"))
+        close_str = row.get("close", row.get("c", "0"))
 
         try:
             vol_f = float(vol_val)
-            total_decimal += vol_f
-            total_int += int(vol_f)
-            if vol_f != int(vol_f):
-                fractional += 1
-            try:
-                close_f = float(close)
-                total_dollar_decimal += close_f * vol_f
-                total_dollar_int += close_f * int(vol_f)
-            except (ValueError, TypeError):
-                pass
         except (ValueError, TypeError):
-            pass
+            continue
 
-        if shown < 20:
-            try:
-                c_str = f"${float(close):,.2f}"
-            except (ValueError, TypeError):
-                c_str = str(close)
-            print(f"  {ticker:<8} {c_str:>10}  {vol_val:>16}")
-            shown += 1
+        total_decimal += vol_f
+        total_int += int(vol_f)
 
-    if fractional:
-        print(f"\n  {fractional} of {len(rows)} rows have"
-              " fractional volume values.")
+        try:
+            close_f = float(close_str)
+        except (ValueError, TypeError):
+            close_f = 0.0
+
+        total_dollar_decimal += close_f * vol_f
+        total_dollar_int += close_f * int(vol_f)
+
+        if vol_f != int(vol_f):
+            fractional_rows.append({
+                "ticker": ticker,
+                "close": close_f,
+                "volume": vol_f,
+            })
+
+    total = len(rows)
+    frac_count = len(fractional_rows)
+    print(f"  Rows sampled:           {total}")
+
+    if total > 0 and frac_count > 0:
+        pct = frac_count / total * 100
+        print(f"  Fractional volume bars: {frac_count} ({pct:.1f}% of sample)")
+    else:
+        print(f"  Fractional volume bars: {frac_count}")
+
+    if fractional_rows:
+        print(f"\n  {'Ticker':<8} {'Close':>10}  {'Volume':>16}")
+        print(f"  {'─' * 8} {'─' * 10}  {'─' * 16}")
+
+        for ft in fractional_rows[:10]:
+            ticker = ft["ticker"]
+            close = f"${ft['close']:,.2f}" if ft["close"] else "N/A"
+            vol = f"{ft['volume']:.6f}"
+            print(f"  {ticker:<8} {close:>10}  {vol:>16}")
+
+        if len(fractional_rows) > 10:
+            print(f"  ... and {len(fractional_rows) - 10} more")
 
     vol_hidden = total_decimal - total_int
-    pct = (vol_hidden / total_decimal * 100) if total_decimal else 0
-    print(f"\n  Impact across {len(rows)} rows:")
-    print(f"    Volume: {total_decimal:,.2f} shares actual,"
-          f" {total_int:,} reported"
-          f"  ({vol_hidden:,.2f} hidden, {pct:.2f}%)")
-    if total_dollar_decimal > 0:
-        dollar_hidden = total_dollar_decimal - total_dollar_int
-        print(f"    Dollars: ${total_dollar_decimal:,.2f} actual,"
-              f" ${total_dollar_int:,.2f} reported"
-              f"  (${dollar_hidden:,.2f} hidden)")
+    if total_decimal > 0:
+        print(f"\n  Impact across {total} rows:")
+        print(f"    Volume: {total_decimal:,.2f} actual,"
+              f" {total_int:,} old-reported"
+              f"  ({vol_hidden:+,.2f} hidden)")
+        if total_dollar_decimal > 0:
+            dollar_hidden = total_dollar_decimal - total_dollar_int
+            print(f"    Dollars: ${total_dollar_decimal:,.2f} actual,"
+                  f" ${total_dollar_int:,.2f} old-reported"
+                  f"  (${dollar_hidden:+,.2f} hidden)")
 
     if save:
         save_rows_to_csv(rows, f"aggs_{file_date.isoformat()}.csv")
 
 
 def run_flatfiles(file_date, file_type, save=False):
-    """Download partial flat files from S3 and display decimal fields."""
-    banner("Massive Flat Files — Fractional Share Precision Demo")
+    """Download partial flat files from S3 and analyze fractional precision."""
+    banner("Fractional Share Precision \u2014 Flat Files Analysis")
     print(f"  Date:     {file_date.isoformat()}")
     print(f"  Endpoint: {S3_ENDPOINT}")
     print(f"  Bucket:   {S3_BUCKET}")
-    print()
-    print("  Fields that changed from integer to decimal:")
-    print("    Trades:     size   (e.g. '0.500000')")
-    print("    Aggregates: volume (e.g. '150.000000')")
-    print(f"{'=' * W}")
+    rounding_explainer()
+    print(f"\n{'=' * W}")
 
     s3 = get_s3_client()
 
@@ -735,7 +852,7 @@ def run_flatfiles(file_date, file_type, save=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Massive — Fractional Share Precision Demos",
+        description="Massive \u2014 Fractional Share Precision Demos",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -743,7 +860,7 @@ def main():
     ws_parser = subparsers.add_parser(
         "websocket",
         aliases=["ws"],
-        help="Stream real-time trades and aggregates via WebSocket",
+        help="Stream real-time trades and analyze fractional precision",
     )
     ws_parser.add_argument(
         "tickers",
@@ -761,20 +878,31 @@ def main():
     # rest
     rest_parser = subparsers.add_parser(
         "rest",
-        help="Fetch last trade, snapshot v2, and snapshot v3 via REST",
+        help="Fetch all trades for a date and analyze fractional precision",
     )
     rest_parser.add_argument(
         "tickers",
         nargs="*",
         default=["AAPL"],
-        help="Stock tickers (default: AAPL)",
+        help="Stock tickers to analyze (default: AAPL)",
+    )
+    rest_parser.add_argument(
+        "--date",
+        type=str,
+        default=None,
+        help="Trading date to query (YYYY-MM-DD). Default: most recent business day.",
+    )
+    rest_parser.add_argument(
+        "--save",
+        action="store_true",
+        help="Export fractional trades to CSV in data/",
     )
 
     # flatfiles
     ff_parser = subparsers.add_parser(
         "flatfiles",
         aliases=["flat", "ff"],
-        help="Download partial flat files from S3 and show decimal fields",
+        help="Download flat files from S3 and analyze fractional precision",
     )
     ff_parser.add_argument(
         "--date",
@@ -786,7 +914,7 @@ def main():
         "--type",
         choices=["trades", "aggs", "both"],
         default="both",
-        help="Which flat file to demo (default: both)",
+        help="Which flat file to analyze (default: both)",
     )
     ff_parser.add_argument(
         "--save",
@@ -802,7 +930,15 @@ def main():
 
     elif args.command == "rest":
         tickers = [t.upper() for t in args.tickers]
-        run_rest(tickers)
+        if args.date:
+            try:
+                trade_date = date.fromisoformat(args.date)
+            except ValueError:
+                parser.error(f"Invalid date format: '{args.date}'"
+                             " (expected YYYY-MM-DD)")
+        else:
+            trade_date = most_recent_business_day()
+        run_rest(tickers, trade_date, save=args.save)
 
     elif args.command in ("flatfiles", "flat", "ff"):
         if args.date:
