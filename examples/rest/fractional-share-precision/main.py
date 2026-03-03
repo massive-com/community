@@ -127,15 +127,20 @@ def rounding_explainer():
     print("    Larger frac (e.g. 52.12) \u2192 reported as 52 (deflated)")
 
 
-def print_impact(sub_one, larger_frac, net_misreported, dollar_impact):
+def print_impact(sub_one, larger_frac, actual_vol, reported_vol,
+                 actual_dollars, reported_dollars):
     """Print the standard impact summary block."""
-    print("\n  Impact:")
-    print(f"    Sub-1-share trades:   {sub_one:,} trades reported as 1 share"
-          f" (volume inflated)")
-    print(f"    Larger fractional:    {larger_frac:,} trades with fraction dropped"
-          f" (volume deflated)")
-    print(f"    Net volume misreported: {net_misreported:+,.4f} shares")
-    print(f"    Dollar impact:          ${dollar_impact:+,.2f}")
+    vol_hidden = actual_vol - reported_vol
+    dollar_hidden = actual_dollars - reported_dollars
+    print("\n  Volume gap:")
+    print(f"    Sub-1-share trades: {sub_one:,} reported as 1 share (inflated)")
+    print(f"    Larger fractional:  {larger_frac:,} with fraction dropped (truncated)")
+    print(f"    Shares:  {actual_vol:,.4f} actual,"
+          f" {reported_vol:,.0f} old-reported"
+          f"  ({vol_hidden:+,.4f} hidden)")
+    print(f"    Dollars: ${actual_dollars:,.2f} actual,"
+          f" ${reported_dollars:,.2f} old-reported"
+          f"  (${dollar_hidden:+,.2f} hidden)")
 
 
 # ── WebSocket demo ──────────────────────────────────────────────
@@ -156,13 +161,15 @@ def run_websocket(tickers, duration=30):
     larger_frac_count = 0
     actual_frac_volume = 0.0
     reported_frac_volume = 0.0
-    dollar_impact = 0.0
+    actual_frac_dollars = 0.0
+    reported_frac_dollars = 0.0
     start_time = time.monotonic()
 
     def handle_messages(raw_data):
         nonlocal trade_count, agg_count
         nonlocal sub_one_count, larger_frac_count
-        nonlocal actual_frac_volume, reported_frac_volume, dollar_impact
+        nonlocal actual_frac_volume, reported_frac_volume
+        nonlocal actual_frac_dollars, reported_frac_dollars
 
         msgs = json.loads(raw_data)
         for msg in msgs:
@@ -193,7 +200,8 @@ def run_websocket(tickers, duration=30):
 
                             actual_frac_volume += actual
                             reported_frac_volume += reported
-                            dollar_impact += hidden * price
+                            actual_frac_dollars += actual * price
+                            reported_frac_dollars += reported * price
 
                             if actual < 1.0:
                                 sub_one_count += 1
@@ -336,9 +344,9 @@ def run_websocket(tickers, duration=30):
         if len(fractional_trades) > 10:
             print(f"  ... and {len(fractional_trades) - 10:,} more (see CSV)")
 
-        net_misreported = actual_frac_volume - reported_frac_volume
         print_impact(sub_one_count, larger_frac_count,
-                     net_misreported, dollar_impact)
+                     actual_frac_volume, reported_frac_volume,
+                     actual_frac_dollars, reported_frac_dollars)
 
     saved = save_results()
     if saved:
@@ -365,7 +373,8 @@ def fetch_and_analyze(client, ticker, trade_date):
     larger_frac_count = 0
     actual_frac_volume = 0.0
     reported_frac_volume = 0.0
-    dollar_impact = 0.0
+    actual_frac_dollars = 0.0
+    reported_frac_dollars = 0.0
 
     for t in client.list_trades(ticker, timestamp=str(trade_date), limit=50000):
         total_count += 1
@@ -395,7 +404,8 @@ def fetch_and_analyze(client, ticker, trade_date):
 
             actual_frac_volume += actual
             reported_frac_volume += reported
-            dollar_impact += hidden_value
+            actual_frac_dollars += actual * price
+            reported_frac_dollars += reported * price
 
             if actual < 1.0:
                 sub_one_count += 1
@@ -421,7 +431,8 @@ def fetch_and_analyze(client, ticker, trade_date):
         "larger_frac_count": larger_frac_count,
         "actual_frac_volume": actual_frac_volume,
         "reported_frac_volume": reported_frac_volume,
-        "dollar_impact": dollar_impact,
+        "actual_frac_dollars": actual_frac_dollars,
+        "reported_frac_dollars": reported_frac_dollars,
     }
 
 
@@ -462,12 +473,13 @@ def print_ticker_results(result):
         print(f"  ... and {len(frac_trades) - 10:,} more")
 
     # Impact summary
-    net_misreported = result["actual_frac_volume"] - result["reported_frac_volume"]
     print_impact(
         result["sub_one_count"],
         result["larger_frac_count"],
-        net_misreported,
-        result["dollar_impact"],
+        result["actual_frac_volume"],
+        result["reported_frac_volume"],
+        result["actual_frac_dollars"],
+        result["reported_frac_dollars"],
     )
 
 
@@ -532,15 +544,17 @@ def run_rest(tickers, trade_date, save=False):
         total_frac = sum(r["fractional_count"] for r in results)
         total_sub_one = sum(r["sub_one_count"] for r in results)
         total_larger = sum(r["larger_frac_count"] for r in results)
-        total_actual = sum(r["actual_frac_volume"] for r in results)
-        total_reported = sum(r["reported_frac_volume"] for r in results)
-        total_dollar = sum(r["dollar_impact"] for r in results)
-        net = total_actual - total_reported
+        total_actual_vol = sum(r["actual_frac_volume"] for r in results)
+        total_reported_vol = sum(r["reported_frac_volume"] for r in results)
+        total_actual_dollars = sum(r["actual_frac_dollars"] for r in results)
+        total_reported_dollars = sum(r["reported_frac_dollars"] for r in results)
 
         pct = (total_frac / total_trades * 100) if total_trades else 0
         print(f"  Trades analyzed:        {total_trades:,}")
         print(f"  Fractional trades:      {total_frac:,} ({pct:.1f}%)")
-        print_impact(total_sub_one, total_larger, net, total_dollar)
+        print_impact(total_sub_one, total_larger,
+                     total_actual_vol, total_reported_vol,
+                     total_actual_dollars, total_reported_dollars)
 
     # CSV export
     if save:
@@ -652,7 +666,8 @@ def demo_trades(s3, file_date, save=False):
     larger_frac_count = 0
     actual_frac_volume = 0.0
     reported_frac_volume = 0.0
-    dollar_impact = 0.0
+    actual_frac_dollars = 0.0
+    reported_frac_dollars = 0.0
 
     for row in rows:
         size_val = row.get(size_col, "")
@@ -670,7 +685,6 @@ def demo_trades(s3, file_date, save=False):
                 price = float(price_str)
             except (ValueError, TypeError):
                 price = 0.0
-            hidden = actual - reported
 
             fractional_rows.append({
                 "ticker": ticker,
@@ -681,7 +695,8 @@ def demo_trades(s3, file_date, save=False):
 
             actual_frac_volume += actual
             reported_frac_volume += reported
-            dollar_impact += hidden * price
+            actual_frac_dollars += actual * price
+            reported_frac_dollars += reported * price
 
             if actual < 1.0:
                 sub_one_count += 1
@@ -712,9 +727,9 @@ def demo_trades(s3, file_date, save=False):
         if len(fractional_rows) > 10:
             print(f"  ... and {len(fractional_rows) - 10} more")
 
-        net_misreported = actual_frac_volume - reported_frac_volume
         print_impact(sub_one_count, larger_frac_count,
-                     net_misreported, dollar_impact)
+                     actual_frac_volume, reported_frac_volume,
+                     actual_frac_dollars, reported_frac_dollars)
 
     if save:
         save_rows_to_csv(rows, f"trades_{file_date.isoformat()}.csv")

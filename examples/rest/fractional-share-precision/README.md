@@ -6,15 +6,19 @@
 
 ## Background
 
-Brokerages let retail investors buy fractional shares (e.g. 0.038 shares of AAPL). These trades are reported to the consolidated tape, but until recently, the reporting infrastructure only supported whole-number quantities. A trade for 0.038 shares was reported as 1, and a trade for 52.12 shares was reported as 52. The fractional precision was lost. See the [FINRA trade reporting notice](https://www.finra.org/rules-guidance/notices/trade-reporting-notice-032224) for background on this change.
+Brokerages let retail investors buy fractional shares (e.g. 0.038 shares of AAPL). These trades are reported to the consolidated tape, but until recently, the reporting infrastructure only supported whole-number quantities. A trade for 0.038 shares was reported as 1, and a trade for 52.12 shares was reported as 52. The fractional precision was lost.
 
-On February 23, 2026, the UTP and CTA SIPs began reporting fractional share quantities for NMS stocks. Massive's APIs now expose these decimal values across WebSocket, REST, and flat file delivery.
+This was a reporting problem, not an execution problem. Trades settled correctly; if you bought 0.5 shares, you received 0.5 shares and paid for 0.5 shares. But the consolidated tape, the canonical source of truth for market data, recorded the wrong quantity. Any system consuming that data downstream was working with distorted inputs.
+
+FINRA first announced the fractional share reporting enhancements in [March 2024](https://www.finra.org/rules-guidance/notices/trade-reporting-notice-032224). The effective date was pushed back twice ([November 2024](https://www.finra.org/filing-reporting/technical-notices/update-fractional-shares-reporting-20241112), [March 2025](https://www.finra.org/filing-reporting/technical-notices/update-fractional-shares-reporting-20250328)) before landing on February 23, 2026. The [January 14, 2026 Trade Reporting Notice](https://www.finra.org/rules-guidance/notices/trade-reporting-notice-20260114) contains the final implementation details.
+
+On February 23, 2026, the UTP and CTA SIPs began reporting fractional share quantities for NMS stocks. This change currently applies to NMS stocks only; FINRA has indicated that OTC equity securities will follow on a separate timeline. Massive's APIs now expose these decimal values across WebSocket, REST, and flat file delivery.
 
 ## Why this matters
 
 **Truncated trade sizes.** With integer-only fields, a trade for 0.038 shares was reported as 1, and a trade for 52.12 shares was reported as 52. Sub-1-share trades were rounded up to 1, while larger trades had their fractional portion dropped. Either way, the reported quantity was wrong. The demos below include an impact analysis that shows how much volume was hidden by this truncation.
 
-**Volume misreporting.** Integer truncation distorted volume on every fractional trade. The difference compounds across a full trading day and thousands of tickers. Each demo reconstructs what the old integer-only reporting would have shown and calculates the total volume and dollar impact.
+**Volume misreporting.** Integer truncation distorted reported volume on every fractional trade. The difference compounds across a full trading day and thousands of tickers. Each demo reconstructs what the old integer-only reporting would have shown and displays the volume gap: actual values side by side with old-reported values, in both shares and notional dollars. To be clear, no one lost money from the truncation itself (trades settled at the correct quantities), but any system relying on tape volume data (VWAP algorithms, liquidity metrics, volume-profile strategies, financial dashboards) was operating on inaccurate inputs.
 
 **Flat file schema change.** The WebSocket and REST APIs added new fields alongside existing ones, so nothing breaks. Flat files are different: the `size` and `volume` columns changed from integers to decimals in place. If your pipeline casts these columns to `int`, it will either error or silently truncate. See [Breaking vs Non-Breaking Changes](#breaking-vs-non-breaking-changes) below.
 
@@ -27,7 +31,9 @@ On February 23, 2026, the UTP and CTA SIPs began reporting fractional share quan
 
 ### Why strings instead of floats
 
-JSON does not guarantee precision for large or fractional numbers. A value like `0.123456789` can lose precision when parsed as an IEEE 754 float. The API returns decimal values as **strings** to preserve the exact value reported by the SIP. Use your language's arbitrary-precision decimal type (Python `decimal.Decimal`, Java `BigDecimal`, etc.) if you need exact arithmetic.
+Under the new FINRA rules, fractional quantities are reported with up to six decimal places of precision, truncated (not rounded) beyond that point. A trade of 1/3 share, for example, is reported as `0.333333`.
+
+JSON does not guarantee precision for large or fractional numbers. A value like `0.123456` can lose precision when parsed as an IEEE 754 float. The API returns decimal values as **strings** to preserve the exact value reported by the SIP. Use your language's arbitrary-precision decimal type (Python `decimal.Decimal`, Java `BigDecimal`, etc.) if you need exact arithmetic.
 
 ## What changed
 
@@ -51,10 +57,10 @@ This repo contains a single `main.py` with three subcommands, one per API:
 | Subcommand | Aliases | API | What it shows |
 |------------|---------|-----|---------------|
 | `websocket` | `ws` | WebSocket | Streams real-time trades, identifies fractional quantities, shows impact analysis. Saves results to `data/` as CSV |
-| `rest` | | REST | Fetches all trades for a date, identifies fractional quantities, shows net volume misreported and dollar impact. Pass `--save` to export CSV |
+| `rest` | | REST | Fetches all trades for a date, identifies fractional quantities, shows the volume gap between actual and old-reported values. Pass `--save` to export CSV |
 | `flatfiles` | `flat`, `ff` | Flat Files (S3) | Downloads a partial flat file, identifies fractional quantities in trades and aggregates. Pass `--save` to write CSV to disk |
 
-All three modes use the same analysis: for each fractional trade, the demo computes what the old integer-only reporting would have shown (sub-1-share trades reported as 1, larger trades truncated to the integer part) and calculates the cumulative volume and dollar impact.
+All three modes use the same analysis: for each fractional trade, the demo computes what the old integer-only reporting would have shown (sub-1-share trades reported as 1, larger trades truncated to the integer part) and shows the cumulative volume gap between actual and old-reported values, in both shares and notional dollars.
 
 ## Disclaimer
 
@@ -157,11 +163,11 @@ The demo runs for 30 seconds by default. Use `-d` / `--duration` to change this.
   19:29:32.552  AAPL      $263.18          1      0.003837
   ... and 433 more (see CSV)
 
-  Impact:
-    Sub-1-share trades:   441 trades reported as 1 share (volume inflated)
-    Larger fractional:    2 trades with fraction dropped (volume deflated)
-    Net volume misreported: -405.3400 shares
-    Dollar impact:          $-106,670.83
+  Volume gap:
+    Sub-1-share trades: 441 reported as 1 share (inflated)
+    Larger fractional:  2 with fraction dropped (truncated)
+    Shares:  37.6600 actual, 443 old-reported  (-405.3400 hidden)
+    Dollars: $9,912.17 actual, $116,583.00 old-reported  ($-106,670.83 hidden)
 
   ------------------------------------------------------------
   Saved files
@@ -191,7 +197,7 @@ For each ticker, the demo:
 - Fetches all trades via the REST trades endpoint
 - Identifies fractional trades using the `decimal_size` field
 - Reconstructs what the old integer-only reporting would have shown
-- Calculates the net volume misreported and dollar impact
+- Calculates the volume gap between actual and old-reported values
 
 Pass `--save` to export fractional trades to CSV files in the `data/` directory.
 
@@ -232,11 +238,11 @@ Pass `--save` to export fractional trades to CSV files in the `data/` directory.
   19:57:45.710      $402.93         1      0.004223
   ... and 420,616 more
 
-  Impact:
-    Sub-1-share trades:   418,320 trades reported as 1 share (volume inflated)
-    Larger fractional:    2,306 trades with fraction dropped (volume deflated)
-    Net volume misreported: -400,000.5677 shares
-    Dollar impact:          $-159,965,449.27
+  Volume gap:
+    Sub-1-share trades: 418,320 reported as 1 share (inflated)
+    Larger fractional:  2,306 with fraction dropped (truncated)
+    Shares:  18,319.4323 actual, 418,320 old-reported  (-400,000.5677 hidden)
+    Dollars: $7,350,814.73 actual, $167,316,264.00 old-reported  ($-159,965,449.27 hidden)
 
 ==============================================================
 ```
@@ -258,7 +264,7 @@ The `--save` flag writes the downloaded rows to CSV files in the current directo
 - `trades_{date}.csv` for trade data
 - `aggs_{date}.csv` for aggregate data
 
-The demo fetches only the first 512KB of each file to keep downloads fast. For trades, it applies the same analysis as the REST and WebSocket modes: it identifies fractional sizes, reconstructs the old reported value, and calculates the net volume and dollar impact. For aggregates, it shows bars with fractional volume and the gap between decimal and integer values.
+The demo fetches only the first 512KB of each file to keep downloads fast. For trades, it applies the same analysis as the REST and WebSocket modes: it identifies fractional sizes, reconstructs the old reported value, and shows the volume gap between actual and old-reported values. For aggregates, it shows bars with fractional volume and the gap between decimal and integer values.
 
 > **Note:** Flat files are not available on weekends and are typically published with a one-day delay. The script defaults to 2 business days ago to avoid requesting a file that hasn't been published yet.
 
@@ -300,11 +306,11 @@ The demo fetches only the first 512KB of each file to keep downloads fast. For t
   A           $119.82         1      0.017900
   ... and 9 more
 
-  Impact:
-    Sub-1-share trades:   17 trades reported as 1 share (volume inflated)
-    Larger fractional:    2 trades with fraction dropped (volume deflated)
-    Net volume misreported: -13.0721 shares
-    Dollar impact:          $-1,563.15
+  Volume gap:
+    Sub-1-share trades: 17 reported as 1 share (inflated)
+    Larger fractional:  2 with fraction dropped (truncated)
+    Shares:  5.9279 actual, 19 old-reported  (-13.0721 hidden)
+    Dollars: $710.85 actual, $2,274.00 old-reported  ($-1,563.15 hidden)
 
   ------------------------------------------------------------
   AGGREGATES flat file (2026-02-27)
@@ -344,7 +350,7 @@ The WebSocket demo uses `raw=True` to receive the full JSON payload, which inclu
 
 ### REST trade analysis
 
-The REST demo fetches all trades for a ticker on a given date using `list_trades()`. For each trade, it reads the `decimal_size` field and computes what the old integer-only reporting would have shown: sub-1-share trades rounded up to 1, larger trades truncated to the integer part. The difference is accumulated to produce the net volume and dollar impact.
+The REST demo fetches all trades for a ticker on a given date using `list_trades()`. For each trade, it reads the `decimal_size` field and computes what the old integer-only reporting would have shown: sub-1-share trades rounded up to 1, larger trades truncated to the integer part. Both actual and old-reported values are accumulated to produce the volume gap summary.
 
 ### Flat file partial downloads
 
