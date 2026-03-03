@@ -6,17 +6,15 @@
 
 ## Background
 
-Brokerages let retail investors buy fractional shares (e.g. 0.038 shares of AAPL). These orders are executed on-exchange and reported to the consolidated tape just like whole-share trades.
-
-Until recently, the Securities Information Processors (SIPs) that distribute consolidated market data only supported integer quantities. A trade for 0.038120 shares was truncated to `0`. The volume it contributed was lost.
+Brokerages let retail investors buy fractional shares (e.g. 0.038 shares of AAPL). These trades are reported to the consolidated tape, but until recently, the reporting infrastructure only supported whole-number quantities. A trade for 0.038 shares was reported as 1, and a trade for 52.12 shares was reported as 52. The fractional precision was lost. See the [FINRA trade reporting notice](https://www.finra.org/rules-guidance/notices/trade-reporting-notice-032224) for background on this change.
 
 On February 23, 2026, the UTP and CTA SIPs began reporting fractional share quantities for NMS stocks. Massive's APIs now expose these decimal values across WebSocket, REST, and flat file delivery.
 
 ## Why this matters
 
-**Trades reported as zero size.** With integer-only fields, every fractional trade has a size of `0`. In the example output below, 10% of AAPL trades were fractional. Any system using the old integer `s` field treats these as zero-quantity trades, which distorts order flow analysis, VWAP calculations, and fill reporting.
+**Truncated trade sizes.** With integer-only fields, a trade for 0.038 shares was reported as 1, and a trade for 52.12 shares was reported as 52. Sub-1-share trades were rounded up to 1, while larger trades had their fractional portion dropped. Either way, the reported quantity was wrong. The demos below include an impact analysis that shows how much volume was hidden by this truncation.
 
-**Volume undercounting.** Integer truncation drops fractional volume from aggregates. The demo shows AAPL minute-bar volume as `v: 985` (integer) vs `dv: 985.002441` (decimal). The difference is small per bar, but it compounds across a full trading day and thousands of tickers.
+**Volume undercounting.** Integer truncation drops fractional volume from aggregates. The difference compounds across a full trading day and thousands of tickers. Each demo calculates the gap between the decimal and integer volume fields so you can see the scale of undercounting.
 
 **Flat file schema change.** The WebSocket and REST APIs added new fields alongside existing ones, so nothing breaks. Flat files are different: the `size` and `volume` columns changed from integers to decimals in place. If your pipeline casts these columns to `int`, it will either error or silently truncate. See [Breaking vs Non-Breaking Changes](#breaking-vs-non-breaking-changes) below.
 
@@ -26,7 +24,6 @@ On February 23, 2026, the UTP and CTA SIPs began reporting fractional share quan
 |---|---|
 | **WebSocket or REST data** | Start reading the new decimal fields (`ds`, `dv`, `dav`, `decimal_size`, `decimal_volume`). The old integer fields still work, so you can migrate on your own schedule. |
 | **Flat files** | Check whether your pipeline parses `size` or `volume` as integers. If so, update it to handle decimal strings. This is a potentially breaking change. |
-| **VWAP, volume analytics, or trade reports** | Verify that your calculations account for fractional quantities. Integer fields undercount by design. |
 
 ### Why strings instead of floats
 
@@ -135,35 +132,41 @@ The demo runs for 30 seconds by default. Use `-d` / `--duration` to change this.
 
 ==============================================================
 
-  Collecting... 398 trades (40 fractional), 20 aggs  [0s left]
+  Collecting... 1183 trades (443 fractional), 26 aggs  [0s left]
 
 ==============================================================
   Fractional Share Precision -- Results
 ==============================================================
-  Trades received:     398
-  Aggregates received: 20
-  Fractional trades:   40 (10.1% of total)
+  Trades received:     1183
+  Aggregates received: 26
+  Fractional trades:   443 (37.4% of total)
 
   Time          Sym         Price      s            ds
   ------------- ------ ----------  -----  ------------
-  19:29:32.482  AAPL      $264.63      0      0.015000
-  19:29:32.483  AAPL      $264.64      0      0.037786
-  19:29:32.483  AAPL      $264.66      0      0.003211
-  19:29:32.483  AAPL      $264.62      0      0.164000
-  19:29:32.483  AAPL      $264.62      0      0.004470
-  19:29:32.483  AAPL      $264.64      0      0.003778
-  19:29:32.483  AAPL      $264.60      0      0.122340
-  19:29:32.483  AAPL      $264.61      0      0.006396
-  19:29:32.483  AAPL      $264.66      0      0.035400
-  19:29:32.483  AAPL      $264.66      0      0.001473
-  ... and 30 more (see CSV)
+  19:29:32.552  AAPL      $263.16      0      0.007300
+  19:29:32.552  AAPL      $263.24      0      0.002500
+  19:29:32.552  AAPL      $263.16      0      0.012800
+  19:29:32.552  AAPL      $263.21      0      0.610000
+  19:29:32.552  AAPL      $263.24      0      0.037000
+  19:29:32.552  AAPL      $263.16      0      0.007700
+  19:29:32.552  AAPL      $263.25      0      0.002500
+  19:29:32.552  AAPL      $263.16      0      0.002500
+  19:29:32.552  AAPL      $263.26      0      0.111877
+  19:29:32.552  AAPL      $263.18      0      0.003837
+  ... and 433 more (see CSV)
+
+  ------------------------------------------------------------
+  Impact analysis
+  ------------------------------------------------------------
+  Shares:  50,616.28 actual, 50,604 reported  (12.28 hidden, 0.02%)
+  Dollars: $13,314,448.07 actual, $13,311,218.69 reported  ($3,229.38 hidden)
 
   ------------------------------------------------------------
   Saved files
   ------------------------------------------------------------
-  data/ws_trades_20260302_132347.csv
-    40 fractional trades
-  data/ws_aggs_20260302_132347.csv
+  data/ws_trades_20260303_084834.csv
+    443 fractional trades
+  data/ws_aggs_20260303_084834.csv
     1 ticker snapshots
 
 ==============================================================
@@ -201,11 +204,9 @@ For each ticker, the demo shows:
 
   Field                                 Value
   ---------------------- --------------------
-  price                             $266.2200
-  size (int)                                0
-  decimal_size                       0.038119
-
-  size truncates to 0 -- decimal_size shows exact: 0.038119
+  price                             $262.9213
+  size (int)                                4
+  decimal_size                            4.0
 
   ------------------------------------------------------------
   SNAPSHOT v2: AAPL
@@ -215,21 +216,23 @@ For each ticker, the demo shows:
   Day bar:
   Field                                     Value
   ---------------------- ------------------------
-  v (int volume)                       21,618,190
-  dv (decimal vol.)              21618190.18918190
-  av (int acc. vol.)                   21,618,190
-  dav (decimal acc.)             21618190.18918190
+  v (int volume)                        9,508,539
+  dv (decimal vol.)                9508539.605661
+  Volume hidden                    0.605661 shares (~$159.40 at $263.18/share)
 
   Minute bar:
   Field                                     Value
   ---------------------- ------------------------
-  v (int volume)                              985
-  dv (decimal vol.)                    985.002441
+  v (int volume)                           45,043
+  dv (decimal vol.)                  45043.757530
+  av (int acc. vol.)                    9,507,959
+  dav (decimal acc.)               9507959.574661
+  Volume hidden                    0.757530 shares (~$199.03 at $262.74/share)
 
   Previous day:
   Field                                     Value
   ---------------------- ------------------------
-  v (int volume)                       72,371,936
+  v (int volume)                       41,812,553
   dv (decimal vol.)                           N/A
 
   ------------------------------------------------------------
@@ -239,10 +242,10 @@ For each ticker, the demo shows:
 
   Field                                         Value
   -------------------------- ------------------------
-  volume (number)                          21,702,332
-  decimal_volume (string)           21702332.189181900
+  volume (number)                           9,395,667
+  decimal_volume (string)              9395667.669121
 
-  volume truncates to 21,702,332 -- decimal_volume shows exact: 21702332.189181900
+  Volume hidden: 0.669121 shares (~$176.09 at $263.16/share)
 
 ==============================================================
 ```
@@ -254,8 +257,8 @@ For each ticker, the demo shows:
 Downloads a partial flat file from S3 and displays rows with decimal precision.
 
 ```bash
-uv run python main.py flatfiles                           # Default: most recent weekday, both types
-uv run python main.py ff --date 2026-02-26                # Specific date (ff alias)
+uv run python main.py flatfiles                           # Default: 2 business days ago, both types
+uv run python main.py ff --date 2026-02-27                # Specific date (ff alias)
 uv run python main.py flat --type trades                  # Trades only (flat alias)
 uv run python main.py flatfiles --type aggs --save        # Aggregates, save to CSV
 ```
@@ -269,7 +272,7 @@ The demo fetches only the first 512KB of each file to keep downloads fast. It sh
 - **Trades:** The `size` column now contains decimal values like `0.500000` instead of whole numbers.
 - **Aggregates:** The `volume` column now contains decimal values like `150.000000`.
 
-> **Note:** Flat files are not available on weekends. The script defaults to the most recent weekday.
+> **Note:** Flat files are not available on weekends and are typically published with a one-day delay. The script defaults to 2 business days ago to avoid requesting a file that hasn't been published yet.
 
 <details>
 <summary>Example output</summary>
@@ -299,21 +302,23 @@ The demo fetches only the first 512KB of each file to keep downloads fast. It sh
 
   ticker      price            size
   -------- ----------  --------------
+  A           $120.86       50.000000
+  A           $120.10        9.000000
+  A           $119.29        5.000000
+  A           $119.29        1.000000
   A           $119.80        9.000000
   A           $119.80        2.000000
   A           $119.80        9.000000
   A           $120.97        0.700000
   A           $118.18        1.000000
   A           $119.01        2.000000
-  A           $120.97        0.667000
-  A           $120.97        0.298000
-  A           $121.47        4.000000
   ...
 
   19 of 50 rows have fractional size values.
 
-  The size field now includes decimal precision
-  (e.g. '0.500000') instead of truncated integers.
+  Impact across 50 rows:
+    Volume: 34,510.41 shares actual, 34,503 reported  (7.41 hidden, 0.02%)
+    Dollars: $4,127,585.15 actual, $4,126,696.30 reported  ($888.86 hidden)
 
   ------------------------------------------------------------
   AGGREGATES flat file: volume field is now decimal
@@ -332,12 +337,15 @@ The demo fetches only the first 512KB of each file to keep downloads fast. It sh
   A           $120.93       2209.829260
   A           $120.83        779.082639
   A           $120.22       3506.008339
+  A           $119.67       9882.143329
+  A           $120.41       4253.249268
   ...
 
-  50 of 50 rows have fractional volume values.
+  39 of 50 rows have fractional volume values.
 
-  The volume field now includes decimal precision
-  instead of truncated integers.
+  Impact across 50 rows:
+    Volume: 294,409.88 shares actual, 294,399 reported  (10.88 hidden, 0.00%)
+    Dollars: $35,440,823.35 actual, $35,439,511.81 reported  ($1,311.55 hidden)
 
 ==============================================================
 ```
