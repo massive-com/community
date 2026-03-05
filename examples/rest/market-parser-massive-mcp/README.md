@@ -1,7 +1,7 @@
 # Market Parser with Massive MCP Server
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 A simple Python CLI for natural language financial queries using the [Massive](https://massive.com/) [MCP server](https://github.com/massive-com/mcp_massive) and Anthropic [Claude 4](https://www.anthropic.com/news/claude-4) via the [Pydantic AI Agent Framework](https://ai.pydantic.dev/agents/).

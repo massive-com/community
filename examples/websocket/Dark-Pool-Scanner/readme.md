@@ -1,7 +1,7 @@
 # Dark Pool Scanner
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 A Python utility that streams real-time US stock trades and filters them to show only dark pool activity using Massive's WebSocket API. This tool helps identify off-exchange trades by filtering for FINRA Trade Reporting Facility (TRF) transactions and displaying trades with readable timestamps and venue details.

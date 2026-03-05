@@ -1,7 +1,7 @@
 # SEC Filings & Disclosures Demo
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 ## Background

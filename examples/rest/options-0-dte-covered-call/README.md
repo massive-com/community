@@ -1,7 +1,7 @@
 # 0-DTE Covered Call Screener
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 A Python utility that screens and analyzes 0-DTE (zero days to expiration) covered call options on SPY using real-time market data from Massive. This tool helps identify optimal covered call opportunities based on customizable criteria including delta, premium yield, and probability of profit.

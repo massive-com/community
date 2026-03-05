@@ -1,7 +1,7 @@
 # Advanced Covered Call Screener & Analyzer
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 An intelligent Python utility that automatically finds the best covered call options across all available expirations with sophisticated profitability analysis. This tool uses real-time market data from Massive to identify optimal covered call opportunities with advanced metrics, smart filtering, and automatic P&L calculation.

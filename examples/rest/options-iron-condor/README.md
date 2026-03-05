@@ -1,7 +1,7 @@
 # Iron Condor Screener & Analyzer
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 A powerful Python tool for finding and analyzing iron condor options strategies. This screener helps you identify the best iron condor opportunities with comprehensive risk analysis and probability calculations.

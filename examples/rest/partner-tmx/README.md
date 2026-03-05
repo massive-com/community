@@ -1,7 +1,7 @@
 # Corporate Events Calendar Powered by TMX Wall Street Horizon + Massive
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 A Streamlit dashboard that demonstrates how Massive's TMX Wall Street Horizon Corporate Events API can be used to visualize and track corporate events. This demo showcases earnings announcements, dividends, shareholder meetings, conferences, and more in an interactive calendar interface with flexible filtering and detailed event information.

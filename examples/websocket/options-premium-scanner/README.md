@@ -1,7 +1,7 @@
 # Options Premium Scanner
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 A Python utility that streams real-time US options trades and filters them by premium size using Massive's WebSocket API. This tool helps identify large options prints by computing premium (price × contracts × 100) and displaying trades with readable timestamps and parsed contract details.

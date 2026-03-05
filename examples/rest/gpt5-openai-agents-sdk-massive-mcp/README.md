@@ -1,7 +1,7 @@
 # GPT-5 + OpenAI Agents SDK + Massive MCP Server — Agentic Financial Analyst Demo
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 A simple Python CLI for natural language financial queries using [GPT‑5](https://openai.com/gpt-5/) via the [OpenAI](https://openai.com/) [Agents SDK](https://openai.github.io/openai-agents-python/) and the [Massive](https://massive.com/) [MCP server](https://github.com/massive-com/mcp_massive). It also supports saving analyses as Markdown reports.

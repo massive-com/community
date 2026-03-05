@@ -1,7 +1,7 @@
 ## Massive Splits & Dividends Endpoints Visualizer
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 An example Python demo that showcases Massive's updated stock **Splits** and **Dividends** REST endpoints:

@@ -1,7 +1,7 @@
 # Real-time Benzinga + Massive Dashboard
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 A Streamlit dashboard that demonstrates how Massive's Benzinga partnership endpoints can power a real-time financial news and analytics monitor. This single-file app layers interactive visualizations, filtering, and polled auto-refresh on top of 9 Benzinga endpoints.

@@ -1,7 +1,7 @@
 # ETF Health Pulse Dashboard Powered by ETF Global® + Massive
 
 <div align="center">
-  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
 A Streamlit experience that demonstrates how the new Massive + ETF Global® datasets can power a real-time ETF health monitor. Instead of only listing API responses, this demo layers analytics, anomaly detection, and narrative insights on top of the `/etf-global/v1` endpoints.
