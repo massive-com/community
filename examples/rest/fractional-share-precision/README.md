@@ -1,0 +1,392 @@
+# Fractional Share Precision Demo
+
+<div align="center">
+  <img src="../../../images/logo.png" alt="Project Logo" width="100%"/>
+</div>
+
+## Background
+
+Brokerages let retail investors buy fractional shares (e.g. 0.038 shares of AAPL). These trades are reported to the consolidated tape, but until recently, the reporting infrastructure only supported whole-number quantities. A trade for 0.038 shares was reported as 1, and a trade for 52.12 shares was reported as 52. The fractional precision was lost.
+
+This was a reporting problem, not an execution problem. Trades settled correctly; if you bought 0.5 shares, you received 0.5 shares and paid for 0.5 shares. But the consolidated tape, the canonical source of truth for market data, recorded the wrong quantity. Any system consuming that data downstream was working with distorted inputs.
+
+FINRA first announced the fractional share reporting enhancements in [March 2024](https://www.finra.org/rules-guidance/notices/trade-reporting-notice-032224). The effective date was pushed back twice ([November 2024](https://www.finra.org/filing-reporting/technical-notices/update-fractional-shares-reporting-20241112), [March 2025](https://www.finra.org/filing-reporting/technical-notices/update-fractional-shares-reporting-20250328)) before landing on February 23, 2026. The [January 14, 2026 Trade Reporting Notice](https://www.finra.org/rules-guidance/notices/trade-reporting-notice-20260114) contains the final implementation details.
+
+On February 23, 2026, the UTP and CTA SIPs began reporting fractional share quantities for NMS stocks. This change currently applies to NMS stocks only; FINRA has indicated that OTC equity securities will follow on a separate timeline. Massive's APIs now expose these decimal values across WebSocket, REST, and flat file delivery.
+
+## Why this matters
+
+**Truncated trade sizes.** With integer-only fields, a trade for 0.038 shares was reported as 1, and a trade for 52.12 shares was reported as 52. Sub-1-share trades were rounded up to 1, while larger trades had their fractional portion dropped. Either way, the reported quantity was wrong. The demos below include an impact analysis that shows how much volume was hidden by this truncation.
+
+**Volume misreporting.** Integer truncation distorted reported volume on every fractional trade. The difference compounds across a full trading day and thousands of tickers. Each demo reconstructs what the old integer-only reporting would have shown and displays the volume gap: actual values side by side with old-reported values, in both shares and notional dollars. To be clear, no one lost money from the truncation itself (trades settled at the correct quantities), but any system relying on tape volume data (VWAP algorithms, liquidity metrics, volume-profile strategies, financial dashboards) was operating on inaccurate inputs.
+
+**Flat file schema change.** The WebSocket and REST APIs added new fields alongside existing ones, so nothing breaks. Flat files are different: the `size` and `volume` columns changed from integers to decimals in place. If your pipeline casts these columns to `int`, it will either error or silently truncate. See [Breaking vs Non-Breaking Changes](#breaking-vs-non-breaking-changes) below.
+
+### Who needs to act
+
+| If you consume... | What to do |
+|---|---|
+| **WebSocket or REST data** | Start reading the new decimal fields (`ds`, `dv`, `dav`, `decimal_size`, `decimal_volume`). The old integer fields still work, so you can migrate on your own schedule. |
+| **Flat files** | Check whether your pipeline parses `size` or `volume` as integers. If so, update it to handle decimal strings. This is a potentially breaking change. |
+
+### Why strings instead of floats
+
+Under the new FINRA rules, fractional quantities are reported with up to six decimal places of precision, truncated (not rounded) beyond that point. A trade of 1/3 share, for example, is reported as `0.333333`.
+
+JSON does not guarantee precision for large or fractional numbers. A value like `0.123456` can lose precision when parsed as an IEEE 754 float. The API returns decimal values as **strings** to preserve the exact value reported by the SIP. Use your language's arbitrary-precision decimal type (Python `decimal.Decimal`, Java `BigDecimal`, etc.) if you need exact arithmetic.
+
+## What changed
+
+All new decimal fields are **strings**. Existing integer fields are unchanged, so you can migrate on your own timeline.
+
+| API | Field | Description |
+|-----|-------|-------------|
+| **WebSocket** Trades | `ds` | Exact trade quantity (vs truncated `s`) |
+| **WebSocket** Aggregates | `dv` | Exact volume (vs truncated `v`) |
+| **WebSocket** Aggregates | `dav` | Exact daily accumulated volume (vs truncated `av`) |
+| **REST** Trades | `decimal_size` | Exact trade quantity |
+| **REST** Snapshots v2 | `dv`, `dav` | Exact volume and accumulated volume |
+| **REST** Snapshots v3 | `decimal_volume` | Exact volume |
+| **Flat Files** Trades | `size` | Now reports decimal values (e.g. `0.500000`) |
+| **Flat Files** Aggregates | `volume` | Now reports decimal values (e.g. `150.000000`) |
+
+## What's inside
+
+This repo contains a single `main.py` with three subcommands, one per API:
+
+| Subcommand | Aliases | API | What it shows |
+|------------|---------|-----|---------------|
+| `websocket` | `ws` | WebSocket | Streams real-time trades, identifies fractional quantities, shows impact analysis. Saves results to `data/` as CSV |
+| `rest` | | REST | Fetches all trades for a date, identifies fractional quantities, shows the volume gap between actual and old-reported values. Pass `--save` to export CSV |
+| `flatfiles` | `flat`, `ff` | Flat Files (S3) | Downloads a partial flat file, identifies fractional quantities in trades and aggregates. Pass `--save` to write CSV to disk |
+
+All three modes use the same analysis: for each fractional trade, the demo computes what the old integer-only reporting would have shown (sub-1-share trades reported as 1, larger trades truncated to the integer part) and shows the cumulative volume gap between actual and old-reported values, in both shares and notional dollars.
+
+## Disclaimer
+
+**Warning:** The examples, demos, and outputs produced with this project are generated by artificial intelligence and large language models. You acknowledge that this project and any outputs are provided "AS IS", may not always be accurate and may contain material inaccuracies even if they appear accurate because of their level of detail or specificity, outputs may not be error free, accurate, current, complete, or operate as you intended, you should not rely on any outputs or actions without independently confirming their accuracy, and any outputs should not be treated as financial or legal advice. You remain responsible for verifying the accuracy, suitability, and legality of any output before relying on it.
+
+## Requirements
+
+- Python 3.10+
+- [uv](https://github.com/astral-sh/uv) package manager
+- Massive API key (for WebSocket and REST demos)
+- Massive S3 credentials (for flat files demo only)
+
+## Quickstart
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/massive-com/community.git
+   cd community/examples/rest/fractional-share-precision
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   uv sync
+   ```
+
+3. **Set up credentials:**
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your keys
+   ```
+
+   Your `.env` file should contain:
+   ```
+   MASSIVE_API_KEY=your-api-key
+
+   # Only needed for the flat files demo
+   MASSIVE_S3_ACCESS_KEY=your-s3-access-key
+   MASSIVE_S3_SECRET_KEY=your-s3-secret-key
+   ```
+
+4. **Get your keys:**
+   - **API key:** Sign up at [massive.com](https://massive.com/) and copy your API key from the dashboard.
+   - **S3 credentials:** Available from your Massive dashboard. Only required for the `flatfiles` subcommand.
+
+## Usage
+
+### WebSocket demo
+
+Streams real-time trades and aggregates, identifies fractional trades, calculates the impact of old integer-only reporting, and saves results to CSV files in the `data/` directory.
+
+```bash
+uv run python main.py websocket                  # Default: AAPL, 30 seconds
+uv run python main.py ws AAPL MSFT GOOGL         # Multiple tickers (ws alias)
+uv run python main.py ws AAPL -d 60              # Collect for 60 seconds
+```
+
+The demo runs for 30 seconds by default. Use `-d` / `--duration` to change this. You can also press `Ctrl+C` to stop early. When collection finishes, the script prints a summary with fractional trade examples, impact analysis, and saves two CSV files:
+
+- `data/ws_trades_{timestamp}.csv` -- fractional trades with old reported size vs actual decimal size.
+- `data/ws_aggs_{timestamp}.csv` -- latest aggregate per ticker with `v` vs `dv` (volume) and `av` vs `dav` (accumulated volume).
+
+<details>
+<summary>Example output</summary>
+
+```
+==============================================================
+  Fractional Share Precision -- WebSocket Trade Analysis
+==============================================================
+  Tickers:  AAPL
+  Duration: 30s
+  Feeds:    Trades (T) + Aggregates (A)
+
+  Before fractional precision, exchanges rounded trade sizes:
+    Sub-1-share (e.g. 0.038) -> reported as 1  (inflated)
+    Larger frac (e.g. 52.12) -> reported as 52 (deflated)
+
+==============================================================
+
+  Collecting... 1183 trades (443 fractional), 26 aggs  [0s left]
+
+
+==============================================================
+  Fractional Share Precision -- Results
+==============================================================
+  Trades received:     1,183
+  Aggregates received: 26
+  Fractional trades:   443 (37.4% of total)
+
+  Time          Sym         Price   Old Rptd   Actual Size
+  ------------- ------ ----------  ---------  ------------
+  19:29:32.552  AAPL      $263.16          1      0.007300
+  19:29:32.552  AAPL      $263.24          1      0.002500
+  19:29:32.552  AAPL      $263.16          1      0.012800
+  19:29:32.552  AAPL      $263.21          1      0.610000
+  19:29:32.552  AAPL      $263.24          1      0.037000
+  19:29:32.552  AAPL      $263.16          1      0.007700
+  19:29:32.552  AAPL      $263.25          1      0.002500
+  19:29:32.552  AAPL      $263.16          1      0.002500
+  19:29:32.552  AAPL      $263.26          1      0.111877
+  19:29:32.552  AAPL      $263.18          1      0.003837
+  ... and 433 more (see CSV)
+
+  Volume gap:
+    Sub-1-share trades: 441 reported as 1 share (inflated)
+    Larger fractional:  2 with fraction dropped (truncated)
+    Shares:  37.6600 actual, 443 old-reported  (-405.3400 hidden)
+    Dollars: $9,912.17 actual, $116,583.00 old-reported  ($-106,670.83 hidden)
+
+  ------------------------------------------------------------
+  Saved files
+  ------------------------------------------------------------
+  data/ws_trades_20260303_084834.csv
+    443 fractional trades
+  data/ws_aggs_20260303_084834.csv
+    1 ticker snapshots
+
+==============================================================
+```
+
+</details>
+
+### REST demo
+
+Fetches every trade for one or more tickers on a given date, identifies trades with fractional quantities, and shows the cumulative impact of old integer-only reporting.
+
+```bash
+uv run python main.py rest                              # Default: AAPL, most recent business day
+uv run python main.py rest TSLA --date 2026-03-02       # Specific ticker and date
+uv run python main.py rest TSLA NVDA --save             # Multiple tickers, export to CSV
+```
+
+For each ticker, the demo:
+
+- Fetches all trades via the REST trades endpoint
+- Identifies fractional trades using the `decimal_size` field
+- Reconstructs what the old integer-only reporting would have shown
+- Calculates the volume gap between actual and old-reported values
+
+Pass `--save` to export fractional trades to CSV files in the `data/` directory.
+
+<details>
+<summary>Example output</summary>
+
+```
+==============================================================
+  Fractional Share Precision -- REST Trade Analysis
+==============================================================
+  Tickers: TSLA
+  Date:    2026-03-02
+
+  Before fractional precision, exchanges rounded trade sizes:
+    Sub-1-share (e.g. 0.038) -> reported as 1  (inflated)
+    Larger frac (e.g. 52.12) -> reported as 52 (deflated)
+==============================================================
+  Fetching trades for TSLA on 2026-03-02 ...
+  Fetched 1,400,747 trades total.
+
+  ------------------------------------------------------------
+  TSLA
+  ------------------------------------------------------------
+  Total trades:      1,400,747
+  Fractional trades: 420,626 (30.0% of total)
+
+  Time                Price  Old Rptd   Actual Size
+  -------------- ---------- --------- -------------
+  19:59:45.611      $402.97         1      0.100000
+  19:59:28.917      $402.97         1      0.045272
+  19:59:23.184      $402.95         1      0.161434
+  19:58:54.020      $402.97         1      0.506519
+  19:58:42.602      $402.98         1      0.052832
+  19:58:41.797      $402.97         1      0.000024
+  19:58:41.600      $402.98         1      0.022333
+  19:58:23.003      $402.92         1      0.030510
+  19:58:22.006      $402.92         1      0.111192
+  19:57:45.710      $402.93         1      0.004223
+  ... and 420,616 more
+
+  Volume gap:
+    Sub-1-share trades: 418,320 reported as 1 share (inflated)
+    Larger fractional:  2,306 with fraction dropped (truncated)
+    Shares:  18,319.4323 actual, 418,320 old-reported  (-400,000.5677 hidden)
+    Dollars: $7,350,814.73 actual, $167,316,264.00 old-reported  ($-159,965,449.27 hidden)
+
+==============================================================
+```
+
+</details>
+
+### Flat files demo
+
+Downloads a partial flat file from S3, identifies trades or aggregate bars with fractional quantities, and shows the impact of old integer-only reporting.
+
+```bash
+uv run python main.py flatfiles                           # Default: 2 business days ago, both types
+uv run python main.py ff --date 2026-02-27                # Specific date (ff alias)
+uv run python main.py flat --type trades                  # Trades only (flat alias)
+uv run python main.py flatfiles --type aggs --save        # Aggregates, save to CSV
+```
+
+The `--save` flag writes the downloaded rows to CSV files in the current directory:
+- `trades_{date}.csv` for trade data
+- `aggs_{date}.csv` for aggregate data
+
+The demo fetches only the first 512KB of each file to keep downloads fast. For trades, it applies the same analysis as the REST and WebSocket modes: it identifies fractional sizes, reconstructs the old reported value, and shows the volume gap between actual and old-reported values. For aggregates, it shows bars with fractional volume and the gap between decimal and integer values.
+
+> **Note:** Flat files are not available on weekends and are typically published with a one-day delay. The script defaults to 2 business days ago to avoid requesting a file that hasn't been published yet.
+
+<details>
+<summary>Example output</summary>
+
+```
+==============================================================
+  Fractional Share Precision -- Flat Files Analysis
+==============================================================
+  Date:     2026-02-27
+  Endpoint: https://files.massive.com
+  Bucket:   flatfiles
+
+  Before fractional precision, exchanges rounded trade sizes:
+    Sub-1-share (e.g. 0.038) -> reported as 1  (inflated)
+    Larger frac (e.g. 52.12) -> reported as 52 (deflated)
+
+==============================================================
+
+  ------------------------------------------------------------
+  TRADES flat file (2026-02-27)
+  ------------------------------------------------------------
+  Downloading: us_stocks_sip/trades_v1/2026/02/2026-02-27.csv.gz (first 512KB)...
+  Rows sampled:      50
+  Fractional trades: 19 (38.0% of sample)
+
+  Ticker       Price  Old Rptd   Actual Size
+  -------- ---------- --------- -------------
+  A           $120.97         1      0.700000
+  A           $119.42         1      0.103100
+  A           $119.42         1      0.189400
+  A           $119.37         1      0.707500
+  A           $119.29         3      3.127700
+  A           $119.80         1      0.082700
+  A           $119.84         1      0.057200
+  A           $120.26         1      0.008307
+  A           $119.78         1      0.034300
+  A           $119.82         1      0.017900
+  ... and 9 more
+
+  Volume gap:
+    Sub-1-share trades: 17 reported as 1 share (inflated)
+    Larger fractional:  2 with fraction dropped (truncated)
+    Shares:  5.9279 actual, 19 old-reported  (-13.0721 hidden)
+    Dollars: $710.85 actual, $2,274.00 old-reported  ($-1,563.15 hidden)
+
+  ------------------------------------------------------------
+  AGGREGATES flat file (2026-02-27)
+  ------------------------------------------------------------
+  Downloading: us_stocks_sip/minute_aggs_v1/2026/02/2026-02-27.csv.gz (first 512KB)...
+  Rows sampled:           50
+  Fractional volume bars: 39 (78.0% of sample)
+
+  Ticker       Close            Volume
+  -------- ----------  ----------------
+  A           $119.05      17798.430378
+  A           $119.53        550.108103
+  A           $120.72       5849.454880
+  A           $120.69       2120.106844
+  A           $120.87        916.519156
+  A           $120.93       2209.829260
+  A           $120.83        779.082639
+  A           $120.22       3506.008339
+  A           $119.67       9882.143329
+  A           $120.41       4253.249268
+  ... and 29 more
+
+  Impact across 50 rows:
+    Volume: 294,409.88 actual, 294,399 old-reported  (+10.88 hidden)
+    Dollars: $35,440,823.35 actual, $35,439,511.81 old-reported  ($+1,311.55 hidden)
+
+==============================================================
+```
+
+</details>
+
+## How it works
+
+### WebSocket raw mode
+
+The WebSocket demo uses `raw=True` to receive the full JSON payload, which includes the `ds` (decimal size) string field. It compares each trade's decimal size against what the old integer-only reporting would have shown to build the impact analysis.
+
+### REST trade analysis
+
+The REST demo fetches all trades for a ticker on a given date using `list_trades()`. For each trade, it reads the `decimal_size` field and computes what the old integer-only reporting would have shown: sub-1-share trades rounded up to 1, larger trades truncated to the integer part. Both actual and old-reported values are accumulated to produce the volume gap summary.
+
+### Flat file partial downloads
+
+The flat files demo uses HTTP range requests (`bytes=0-524287`) to download only the first 512KB of each gzipped CSV. This avoids downloading multi-gigabyte files just to show the format change.
+
+## Breaking vs non-breaking changes
+
+| API | Breaking? | Details |
+|-----|-----------|---------|
+| REST | No | New fields added alongside existing ones. Existing `size` and `volume` fields are unchanged. |
+| WebSocket | No | New fields added alongside existing ones. Existing `s`, `v`, `av` fields are unchanged. |
+| Flat Files | **Potentially** | `size` and `volume` columns changed from integers to decimals. If your pipeline casts these to `int`, it may break. |
+
+## Troubleshooting
+
+- **Not seeing fractional trades in the WebSocket demo**
+  - Fractional trades are a small percentage of total volume. Try a longer duration with `-d 60` or more.
+  - Make sure the US stock market is open (9:30 AM - 4:00 PM ET, weekdays).
+
+- **WebSocket authentication errors**
+  - Verify `MASSIVE_API_KEY` is set correctly in `.env`.
+  - Check that your plan includes real-time stock data.
+
+- **REST demo returns zero fractional trades**
+  - Some tickers have fewer fractional trades than others. Try a popular retail ticker like TSLA or AAPL.
+  - Make sure the date is a recent business day. Use `--date YYYY-MM-DD` to specify.
+  - Make sure your Massive SDK is up to date: `uv sync --upgrade`
+
+- **Flat files demo returns "File not found"**
+  - Flat files are not available for weekends or holidays. Try a recent weekday with `--date YYYY-MM-DD`.
+  - Verify your S3 credentials are correct in `.env`.
+
+- **S3 credentials not working**
+  - S3 credentials are separate from your API key. Get them from your Massive dashboard.
+  - Make sure both `MASSIVE_S3_ACCESS_KEY` and `MASSIVE_S3_SECRET_KEY` are set.
+
+## License
+
+This project is licensed under the [MIT License](../../../LICENSE).
