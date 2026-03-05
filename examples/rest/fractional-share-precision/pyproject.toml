@@ -1,0 +1,22 @@
+[project]
+name = "fractional-share-precision-demo"
+version = "0.1.0"
+description = "Demo for fractional share precision changes"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Alex Novotny" }
+]
+license = "MIT"
+dependencies = [
+  "python-dotenv",
+  "massive",
+  "boto3",
+]
+
+[tool.setuptools]
+py-modules = []
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
