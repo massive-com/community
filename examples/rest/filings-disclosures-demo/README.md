@@ -474,7 +474,7 @@ uv run python main.py tl AAPL --save                       # Save to JSON (tl al
 
 ### Massive Python client
 
-This demo uses the `massive` Python client (v2.3.2+). The `risks`, `taxonomy`, `compare`, and `timeline` subcommands use dedicated SDK methods (`list_stocks_filings_risk_factors` and `list_stocks_taxonomies_risk_factors`), which return typed model objects with auto-pagination. The `index`, `10k`, and `8k` subcommands use the client's internal `_get` method to call beta endpoints that don't have dedicated SDK wrappers yet. All subcommands authenticate through the same `RESTClient` instance.
+This demo uses the `massive` Python client (v2.4.0+). All subcommands use dedicated SDK methods that return typed model objects with auto-pagination. The five underlying methods are `list_stocks_filings_index`, `list_stocks_filings_10k_sections`, `list_stocks_filings_8k_text`, `list_stocks_filings_risk_factors`, and `list_stocks_taxonomies_risk_factors`. All subcommands authenticate through the same `RESTClient` instance.
 
 ### Text previews
 

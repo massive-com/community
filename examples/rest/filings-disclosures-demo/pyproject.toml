@@ -4,6 +4,6 @@ version = "0.1.0"
 description = "SEC Filings & Disclosures Demo using Massive API"
 requires-python = ">=3.10"
 dependencies = [
-    "massive>=2.3.2",
+    "massive>=2.4.0",
     "python-dotenv>=1.0.0",
 ]

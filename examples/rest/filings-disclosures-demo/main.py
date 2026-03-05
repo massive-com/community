@@ -219,12 +219,11 @@ def run_index(ticker, form_type=None, limit=10, save=False):
     print(f"  Limit:     {limit}")
     print(f"{'=' * W}")
 
-    params = {"ticker": ticker, "limit": limit, "sort": "filing_date.desc"}
+    kwargs = {"ticker": ticker, "limit": limit, "sort": "filing_date.desc"}
     if form_type:
-        params["form_type"] = form_type
+        kwargs["form_type"] = form_type
 
-    results = client._get("/stocks/filings/vX/index", params=params,
-                          result_key="results")
+    results = list(client.list_stocks_filings_index(**kwargs))
 
     if not results:
         print("\n  No filings found.")
@@ -236,9 +235,9 @@ def run_index(ticker, form_type=None, limit=10, save=False):
     print(f"  {'-' * 12} {'-' * 10} {'-' * 30}")
 
     for r in results:
-        filing_date = r.get("filing_date", "N/A")
-        form = r.get("form_type", "N/A")
-        issuer = r.get("issuer_name", "N/A")
+        filing_date = r.filing_date or "N/A"
+        form = r.form_type or "N/A"
+        issuer = r.issuer_name or "N/A"
         if len(issuer) > 30:
             issuer = issuer[:27] + "..."
         print(f"  {filing_date:<12} {form:<10} {issuer:<30}")
@@ -246,9 +245,9 @@ def run_index(ticker, form_type=None, limit=10, save=False):
     # Show filing URLs for first few results
     section("Filing URLs (first 3)")
     for r in results[:3]:
-        url = r.get("filing_url", "")
-        form = r.get("form_type", "")
-        filing_date = r.get("filing_date", "")
+        url = r.filing_url or ""
+        form = r.form_type or ""
+        filing_date = r.filing_date or ""
         if url:
             print(f"  {form} ({filing_date})")
             print(f"    {url}")
@@ -257,7 +256,8 @@ def run_index(ticker, form_type=None, limit=10, save=False):
         print(f"\n  ... and {len(results) - 3} more (use --save to export all)")
 
     if save:
-        save_json(results, f"index_{ticker}_{form_type or 'all'}.json")
+        save_json([vars(r) for r in results],
+                  f"index_{ticker}_{form_type or 'all'}.json")
 
     print(f"\n{'=' * W}")
 
@@ -277,17 +277,16 @@ def run_10k(ticker, section_name="risk_factors", filing_date=None,
         print(f"  On or before: {filing_date}")
     print(f"{'=' * W}")
 
-    params = {
+    kwargs = {
         "ticker": ticker,
         "section": section_name,
         "limit": limit,
         "sort": "filing_date.desc",
     }
     if filing_date:
-        params["filing_date.lte"] = filing_date
+        kwargs["filing_date_lte"] = filing_date
 
-    results = client._get("/stocks/filings/10-K/vX/sections", params=params,
-                          result_key="results")
+    results = list(client.list_stocks_filings_10k_sections(**kwargs))
 
     if not results:
         print("\n  No 10-K sections found for this ticker and section.")
@@ -295,10 +294,10 @@ def run_10k(ticker, section_name="risk_factors", filing_date=None,
         return
 
     for r in results:
-        filing_date_val = r.get("filing_date", "N/A")
-        period = r.get("period_end", "N/A")
-        text = r.get("text", "")
-        url = r.get("filing_url", "")
+        filing_date_val = r.filing_date or "N/A"
+        period = r.period_end or "N/A"
+        text = r.text or ""
+        url = r.filing_url or ""
 
         section(f"Filed {filing_date_val} (period ending {period})")
         if url:
@@ -316,7 +315,8 @@ def run_10k(ticker, section_name="risk_factors", filing_date=None,
                       " Use --full to print or --save to export.]")
 
     if save:
-        save_json(results, f"10k_{ticker}_{section_name}.json")
+        save_json([vars(r) for r in results],
+                  f"10k_{ticker}_{section_name}.json")
 
     print(f"\n{'=' * W}")
 
@@ -335,16 +335,15 @@ def run_8k(ticker, filing_date=None, limit=3, full=False, save=False):
     print(f"  Limit:  {limit}")
     print(f"{'=' * W}")
 
-    params = {
+    kwargs = {
         "ticker": ticker,
         "limit": limit,
         "sort": "filing_date.desc",
     }
     if filing_date:
-        params["filing_date.lte"] = filing_date
+        kwargs["filing_date_lte"] = filing_date
 
-    results = client._get("/stocks/filings/8-K/vX/text", params=params,
-                          result_key="results")
+    results = list(client.list_stocks_filings_8k_text(**kwargs))
 
     if not results:
         print("\n  No 8-K text found for this ticker.")
@@ -358,11 +357,11 @@ def run_8k(ticker, filing_date=None, limit=3, full=False, save=False):
     print(f"\n  Found {len(results)} report(s):")
 
     for r in results:
-        filing_date_val = r.get("filing_date", "N/A")
-        form = r.get("form_type", "8-K")
-        accession = r.get("accession_number", "N/A")
-        text = r.get("items_text", "")
-        url = r.get("filing_url", "")
+        filing_date_val = r.filing_date or "N/A"
+        form = r.form_type or "8-K"
+        accession = r.accession_number or "N/A"
+        text = r.items_text or ""
+        url = r.filing_url or ""
 
         section(f"{form} filed {filing_date_val}")
         print(f"  Accession: {accession}")
@@ -381,7 +380,7 @@ def run_8k(ticker, filing_date=None, limit=3, full=False, save=False):
                       " Use --full to print or --save to export.]")
 
     if save:
-        save_json(results, f"8k_{ticker}.json")
+        save_json([vars(r) for r in results], f"8k_{ticker}.json")
 
     print(f"\n{'=' * W}")
 
