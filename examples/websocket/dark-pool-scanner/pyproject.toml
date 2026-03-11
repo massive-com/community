@@ -1,0 +1,18 @@
+[project]
+name = "dark-pool-scanner"
+version = "0.1.0"
+description = "A Python utility that streams real-time US stock trades and filters for dark pool (TRF) activity using Massive's WebSocket API"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Cole Power" }
+]
+license = { file = "LICENSE" }
+dependencies = [
+  "python-dotenv",
+  "massive",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

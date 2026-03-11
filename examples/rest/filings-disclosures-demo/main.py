@@ -23,6 +23,7 @@ import os
 import sys
 import textwrap
 from collections import defaultdict
+from itertools import islice
 
 from dotenv import load_dotenv
 
@@ -223,7 +224,7 @@ def run_index(ticker, form_type=None, limit=10, save=False):
     if form_type:
         kwargs["form_type"] = form_type
 
-    results = list(client.list_stocks_filings_index(**kwargs))
+    results = list(islice(client.list_stocks_filings_index(**kwargs), limit))
 
     if not results:
         print("\n  No filings found.")
@@ -281,12 +282,12 @@ def run_10k(ticker, section_name="risk_factors", filing_date=None,
         "ticker": ticker,
         "section": section_name,
         "limit": limit,
-        "sort": "filing_date.desc",
+        "sort": "period_end.desc",
     }
     if filing_date:
         kwargs["filing_date_lte"] = filing_date
 
-    results = list(client.list_stocks_filings_10k_sections(**kwargs))
+    results = list(islice(client.list_stocks_filings_10k_sections(**kwargs), limit))
 
     if not results:
         print("\n  No 10-K sections found for this ticker and section.")
@@ -343,7 +344,7 @@ def run_8k(ticker, filing_date=None, limit=3, full=False, save=False):
     if filing_date:
         kwargs["filing_date_lte"] = filing_date
 
-    results = list(client.list_stocks_filings_8k_text(**kwargs))
+    results = list(islice(client.list_stocks_filings_8k_text(**kwargs), limit))
 
     if not results:
         print("\n  No 8-K text found for this ticker.")
@@ -403,9 +404,7 @@ def run_risks(ticker, filing_date=None, limit=10, save=False):
     if filing_date:
         kwargs["filing_date_lte"] = filing_date
 
-    results = []
-    for rf in client.list_stocks_filings_risk_factors(**kwargs):
-        results.append(rf)
+    results = list(islice(client.list_stocks_filings_risk_factors(**kwargs), limit))
 
     if not results:
         print("\n  No risk factors found for this ticker.")
@@ -480,9 +479,7 @@ def run_taxonomy(primary=None, secondary=None, limit=20, save=False):
     if secondary:
         kwargs["secondary_category"] = secondary
 
-    results = []
-    for entry in client.list_stocks_taxonomies_risk_factors(**kwargs):
-        results.append(entry)
+    results = list(islice(client.list_stocks_taxonomies_risk_factors(**kwargs), limit))
 
     if not results:
         print("\n  No taxonomy entries found.")
@@ -544,11 +541,12 @@ def _fetch_risks_by_date(client, ticker, limit=1000):
     Returns an ordered dict of {filing_date: [risk_factor, ...]} with the
     most recent filing date first.
     """
-    results = list(
+    results = list(islice(
         client.list_stocks_filings_risk_factors(
             ticker=ticker, limit=limit, sort="filing_date.desc",
-        )
-    )
+        ),
+        limit,
+    ))
     by_date = {}
     for r in results:
         d = r.filing_date or "Unknown"
