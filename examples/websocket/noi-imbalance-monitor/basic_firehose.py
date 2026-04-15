@@ -16,17 +16,17 @@ client = WebSocketClient(
     market=Market.Stocks
 )
 
-# Subscribe to all LULD events (firehose mode)
-client.subscribe("LULD.*")
+# Subscribe to all NOI events (firehose mode)
+client.subscribe("NOI.*")
 
 def handle_msg(msgs):
     for m in msgs:
         print(m)
 
 # ==================== RUN ====================
-print("🚀 LULD Basic Firehose Started")
-print("→ Streaming ALL LULD price-band updates in real time")
-print("→ Press Ctrl+C to stop\n")
+print("NOI Basic Firehose Started")
+print("Streaming ALL NYSE order imbalance updates in real time")
+print("Press Ctrl+C to stop\n")
 
 try:
     client.run(handle_msg)

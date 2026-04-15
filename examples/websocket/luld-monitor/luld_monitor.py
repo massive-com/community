@@ -1,6 +1,5 @@
 from massive import WebSocketClient
-from massive.websocket.models import Feed, Market, WebSocketMessage
-from typing import List
+from massive.websocket.models import Feed, Market, LimitUpLimitDown
 import os
 from dotenv import load_dotenv
 import time
@@ -30,9 +29,9 @@ def format_ts(ts: int) -> str:
     return time.strftime("%H:%M:%S", time.localtime(seconds))
 
 # ==================== HANDLER ====================
-def handle_msg(msgs: List[WebSocketMessage]):
+def handle_msg(msgs):
     for m in msgs:
-        if m.event_type != "LULD":
+        if not isinstance(m, LimitUpLimitDown):
             continue
 
         symbol = m.symbol
@@ -59,4 +58,7 @@ print("🚀 LULD Smart Monitor Started")
 print("→ Monitoring Mag7 price bands + all market halts/resumptions")
 print("→ Press Ctrl+C to stop\n")
 
-client.run(handle_msg)
+try:
+    client.run(handle_msg)
+except KeyboardInterrupt:
+    pass

@@ -1,0 +1,21 @@
+[project]
+name = "luld-monitor"
+version = "0.1.0"
+description = "Real-time LULD price band monitor and trading halt detector using Massive's WebSocket API"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Justin Weissig" }
+]
+license = { file = "LICENSE" }
+dependencies = [
+  "python-dotenv",
+  "massive",
+]
+
+[tool.setuptools]
+py-modules = ["luld_monitor", "basic_firehose"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

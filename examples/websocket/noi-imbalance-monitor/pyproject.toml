@@ -1,0 +1,21 @@
+[project]
+name = "noi-imbalance-monitor"
+version = "0.1.0"
+description = "Real-time NYSE order imbalance (NOI) monitor using Massive's WebSocket API"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Cole Power" }
+]
+license = { file = "LICENSE" }
+dependencies = [
+  "python-dotenv",
+  "massive>=2.3.2",
+]
+
+[tool.setuptools]
+py-modules = ["noi_monitor", "basic_firehose"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
