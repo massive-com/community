@@ -88,7 +88,7 @@ def create_massive_mcp_server():
         raise Exception("MASSIVE_API_KEY not set in environment.")
     return MCPServerStdio(params={
         "command": "uvx",
-        "args": ["--from", "git+https://github.com/massive-com/mcp_massive@v0.8.0", "mcp_massive"],
+        "args": ["--from", "git+https://github.com/massive-com/mcp_massive@v0.9.0", "mcp_massive"],
         "env": {**os.environ, "MASSIVE_API_KEY": api_key}
     })
 

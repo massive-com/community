@@ -19,7 +19,7 @@ def create_massive_mcp_server():
         command="uvx",
         args=[
             "--from",
-            "git+https://github.com/massive-com/mcp_massive@v0.8.0",
+            "git+https://github.com/massive-com/mcp_massive@v0.9.0",
             "mcp_massive"
         ],
         env=env
