@@ -4,6 +4,11 @@
   <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
 </div>
 
+<div align="center">
+  <img src="images/dashboard-cl.png" alt="WTI crude oil dashboard view, term structure in backwardation" width="100%"/>
+  <p><em>WTI crude (CL) — backwardated curve, +4.86% on the front, full panel layout.</em></p>
+</div>
+
 ## Background
 
 A futures contract is an agreement to buy or sell something at a fixed price on a future date. Every product, whether crude oil, gold, the S&P 500, or 10-year Treasuries, has many contracts trading at the same time. Each one expires in a different month, and the prices form a curve across expirations.
@@ -55,6 +60,16 @@ This dashboard puts all of that on one screen, built on Massive's REST API. The 
 | Time & sales | Recent tick-level trades with aggressor coloring estimated from the nearest available quote at or before each trade, plus a tape-speed indicator derived from the recent trade batch | Trades, Quotes, Snapshot |
 
 The dashboard auto-selects the front-month contract when you switch products. Click any other contract on the curve, in the contracts table, or in the watchlist to lock the workstation to that ticker. The URL updates as `/?p=ES&t=ESM6`, so demo states can be bookmarked and shared. Use the Position Sizing sibling buttons when you want to preserve approximate notional exposure while switching from E-mini to Micro, Standard to Micro, or another supported size pair.
+
+<div align="center">
+  <img src="images/dashboard-es.png" alt="E-mini S&P 500 dashboard view, contango curve" width="100%"/>
+  <p><em>E-mini S&P 500 (ES) — contango curve, E-mini / Micro variant pills next to the ticker, Position Sizing showing $364k notional per contract.</em></p>
+</div>
+
+<div align="center">
+  <img src="images/dashboard-gc.png" alt="Gold futures dashboard view" width="100%"/>
+  <p><em>Gold (GC) — Std / Micro variant family, 90-day history with volume bars, watchlist coloring by daily change.</em></p>
+</div>
 
 ## Trader-aware data handling
 
