@@ -1,10 +1,6 @@
 # Futures Dashboard
 
 <div align="center">
-  <img src="../../../images/logo_new.png" alt="Project Logo" width="100%"/>
-</div>
-
-<div align="center">
   <img src="images/dashboard-cl.png" alt="WTI crude oil dashboard view, term structure in backwardation" width="100%"/>
   <p><em>WTI crude (CL) — backwardated curve, +4.86% on the front, full panel layout.</em></p>
 </div>
@@ -18,32 +14,6 @@ The shape of that curve carries information. When far-dated contracts trade abov
 Many CME products also come in size variants (Standard, E-mini, Micro). The S&P 500 ships as ES (E-mini, $50/pt) and MES (Micro, $5/pt); WTI crude ships as CL (1,000 bbl) and MCL (100 bbl). Traders pick the size that matches the notional exposure they want.
 
 This dashboard puts all of that on one screen, built on Massive's REST API. The same query patterns work across the 1,500+ futures product catalog spanning CME, CBOT, NYMEX, and COMEX. Reference: [docs](https://massive.com/docs/rest/futures/overview).
-
-## What it looks like
-
-```
-┌── Status strip ─ logo · CME● CBOT● NYMEX● COMEX● · 1,545 products ─ docs↗ ─┐
-├──────────┬────────────────────────────────────────────────────────────────┤
-│ Search   │  ┌── Hero ─────────────────────────────────────────────────┐   │
-│          │  │  ESM6  S&P 500  [E-mini│Micro]  REAL-TIME              │   │
-│ ES NQ YM │  │                                                         │   │
-│ ZB ZN    │  │   7,231.50    ▼ -29.50  -0.41%                          │   │
-│ CL NG    │  │   bid 7228 · ask 7228.5 · spread 0.25                   │   │
-│ GC SI HG │  │   L 7,213 ──────────●────────── H 7,280                 │   │
-│ ...      │  │   1.18M vol · expires 45d · session ends 16:00          │   │
-│          │  └─────────────────────────────────────────────────────────┘   │
-│ Catalog  │                                                                 │
-│  energy  │  ┌── Term Structure ──┬── 90-Day History ──┬── Position ───┐  │
-│  ...     │  │  curve              │  area + volume     │  Contracts: 1│  │
-│          │  │  contango  -3% roll │                    │  Notional: $X│  │
-│          │  └─────────────────────┴────────────────────┴───────────────┘  │
-│          │                                                                 │
-│          │  ┌── Watchlist ──┬── Contracts ──┬── Time & Sales ──┐         │
-│          │  │ symbol  last  │ ESM6 front    │ 14:30 7228.5 ×2  │         │
-│          │  │ chg%   spark  │ ESU6          │ ...              │         │
-│          │  └───────────────┴───────────────┴──────────────────┘         │
-└──────────┴────────────────────────────────────────────────────────────────┘
-```
 
 ## What's in each panel
 
