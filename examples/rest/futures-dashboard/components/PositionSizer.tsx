@@ -131,7 +131,7 @@ export function PositionSizer({
   }
 
   return (
-    <div className="terminal-panel rounded-lg p-4 flex flex-col gap-3">
+    <div className="terminal-panel rounded-lg p-3 flex flex-col gap-2 overflow-hidden">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
           Position Sizing
@@ -172,7 +172,7 @@ export function PositionSizer({
               const n = parseInt(e.target.value, 10);
               if (isFinite(n) && n > 0) setContracts(n);
             }}
-            className="mt-1 w-full px-2 py-1.5 bg-bg-deep border border-bg-edge rounded font-mono text-base text-zinc-100 focus:outline-none focus:border-accent-blue tnum"
+            className="mt-1 w-full px-2 py-1 bg-bg-deep border border-bg-edge rounded font-mono text-base text-zinc-100 focus:outline-none focus:border-accent-blue tnum"
           />
         </label>
         <label className="text-[10px] uppercase tracking-wider text-zinc-500">
@@ -182,12 +182,12 @@ export function PositionSizer({
             value={targetUSD}
             onChange={(e) => handleTargetChange(e.target.value)}
             placeholder="e.g. 100000"
-            className="mt-1 w-full px-2 py-1.5 bg-bg-deep border border-bg-edge rounded font-mono text-base text-zinc-100 focus:outline-none focus:border-accent-blue tnum"
+            className="mt-1 w-full px-2 py-1 bg-bg-deep border border-bg-edge rounded font-mono text-base text-zinc-100 focus:outline-none focus:border-accent-blue tnum"
           />
         </label>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mt-1">
+      <div className="grid grid-cols-2 gap-2">
         <Cell
           label="Total Notional (USD)"
           value={
@@ -233,11 +233,11 @@ export function PositionSizer({
       </div>
 
       {otherVariants.length > 0 && (
-        <div className="border-t border-bg-border pt-3">
-          <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2">
+        <div className="border-t border-bg-border pt-2">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">
             Same notional in other sizes
           </div>
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             {otherVariants.map((v) => {
               const eq = equivalentContracts(v.multiplier);
               return (
@@ -300,7 +300,7 @@ function Cell({
   sub?: string;
 }) {
   return (
-    <div className="bg-bg-deep border border-bg-edge rounded px-2.5 py-1.5">
+    <div className="bg-bg-deep border border-bg-edge rounded px-2 py-1">
       <div className="text-[10px] uppercase tracking-wider text-zinc-500">
         {label}
       </div>

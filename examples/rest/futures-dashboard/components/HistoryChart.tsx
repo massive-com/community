@@ -29,7 +29,7 @@ interface Props {
 
 export function HistoryChart({ ticker }: Props) {
   const { data, error } = useSWR<ContractDetail>(
-    ticker ? `/api/contract/${ticker}` : null,
+    ticker ? `/api/history/${ticker}` : null,
     fetchJson,
     { refreshInterval: 60_000 }
   );

@@ -70,7 +70,7 @@ export function Watchlist({ selected, onSelect }: Props) {
   }
 
   return (
-    <section className="terminal-panel rounded-lg overflow-hidden flex flex-col">
+    <section className="terminal-panel rounded-lg overflow-hidden flex flex-col h-full">
       <div className="terminal-panel-header px-4 py-2.5 border-b border-bg-border flex items-center gap-3">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
           Watchlist
@@ -91,7 +91,7 @@ export function Watchlist({ selected, onSelect }: Props) {
         </div>
       )}
 
-      <div className="overflow-y-auto max-h-[24rem]">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <table className="w-full text-xs font-mono tnum">
           <thead className="sticky top-0 bg-bg-panel/95 backdrop-blur z-10">
             <tr className="border-b border-bg-border text-[9px] uppercase tracking-wider text-zinc-500">
