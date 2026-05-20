@@ -68,3 +68,73 @@ def mark_fired(state: TickerState, alert_type: str, now: float | None = None) ->
     if now is None:
         now = time_module.time()
     state.cooldowns[alert_type] = now
+
+
+def check_squeeze(
+    state: TickerState,
+    window_secs: int,
+    vol_multiplier: float,
+    price_pct: float,
+    uptick_ratio: float,
+    now_ms: float | None = None,
+) -> bool:
+    """Returns True when all three squeeze conditions are simultaneously met."""
+    if len(state.trades) < 2 or len(state.aggs) < 2:
+        return False
+
+    if now_ms is None:
+        now_ms = time_module.time() * 1000
+
+    # 1. Volume velocity: last 10s burst vs per-second average over full window
+    cutoff_10s = now_ms - 10_000
+    last_10s_vol = sum(t[2] for t in state.trades if t[0] >= cutoff_10s)
+    window_vol = sum(t[2] for t in state.trades)
+    if window_vol == 0:
+        return False
+    per_sec_avg = window_vol / window_secs
+    if per_sec_avg == 0 or (last_10s_vol / 10) < per_sec_avg * vol_multiplier:
+        return False
+
+    # 2. Price velocity: current price vs oldest agg close
+    oldest_close = state.aggs[0][1]
+    if oldest_close == 0:
+        return False
+    price_change_pct = (state.last_price - oldest_close) / oldest_close * 100
+    if price_change_pct < price_pct:
+        return False
+
+    # 3. Uptick dominance
+    total = len(state.trades)
+    upticks = sum(1 for t in state.trades if t[3])
+    if upticks / total < uptick_ratio:
+        return False
+
+    return True
+
+
+def check_reversal(
+    state: TickerState,
+    window_secs: int,
+    price_pct: float,
+    uptick_ratio: float,
+    now_ms: float | None = None,
+) -> bool:
+    """Returns True when both reversal conditions are simultaneously met (stateless)."""
+    if len(state.trades) < 2 or len(state.aggs) < 2:
+        return False
+
+    # 1. Price velocity: current price down by price_pct vs oldest agg close
+    oldest_close = state.aggs[0][1]
+    if oldest_close == 0:
+        return False
+    price_change_pct = (state.last_price - oldest_close) / oldest_close * 100
+    if price_change_pct > -price_pct:
+        return False
+
+    # 2. Downtick dominance
+    total = len(state.trades)
+    downticks = sum(1 for t in state.trades if not t[3])
+    if downticks / total < uptick_ratio:
+        return False
+
+    return True

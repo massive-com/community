@@ -1,5 +1,6 @@
 from collections import deque
 from squeeze_monitor import TickerState, trim_window, is_cooled_down, mark_fired
+from squeeze_monitor import check_squeeze, check_reversal
 
 
 def test_ticker_state_defaults():
@@ -73,3 +74,148 @@ def test_cooldown_does_not_cross_alert_types():
     mark_fired(state, "SQUEEZE ALERT", now=now)
     # REVERSAL ALERT should still be available
     assert is_cooled_down(state, "REVERSAL ALERT", cooldown_secs=30, now=now + 5) is True
+
+
+def _make_squeeze_state(now_ms: float) -> TickerState:
+    """Builds a state that satisfies all three squeeze conditions with defaults."""
+    state = TickerState()
+    base = now_ms - 60_000
+
+    # 50 trades spread across the 60s window, all upticks, 100 shares each
+    last_price = 40.0
+    for i in range(50):
+        price = 40.0 + i * 0.04          # trending up to ~42.0
+        state.trades.append((base + i * 1_000, price, 100, price > last_price))
+        last_price = price
+
+    # Burst in last 10s: 10 trades, 400 shares each (4000 shares / 10s = 400/s)
+    # Window average: (50*100 + 10*400) / 60 = 9000/60 = 150/s. 400/150 = 2.67x
+    # Use vol_multiplier=2.0 in tests so this passes
+    for i in range(10):
+        price = 42.0 + i * 0.03
+        state.trades.append((now_ms - 9_000 + i * 1_000, price, 400, True))
+
+    # Oldest agg close 4.1% below current
+    state.aggs.append((base, 40.65, 1000))
+    state.aggs.append((now_ms - 1_000, 42.30, 2000))
+    state.last_price = 42.30
+    return state
+
+
+def test_check_squeeze_all_conditions_met():
+    now_ms = 100_000_000.0
+    state = _make_squeeze_state(now_ms)
+    result = check_squeeze(
+        state, window_secs=60, vol_multiplier=2.0,
+        price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
+    )
+    assert result is True
+
+
+def test_check_squeeze_volume_condition_not_met():
+    now_ms = 100_000_000.0
+    state = _make_squeeze_state(now_ms)
+    result = check_squeeze(
+        state, window_secs=60, vol_multiplier=10.0,  # impossible threshold
+        price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
+    )
+    assert result is False
+
+
+def test_check_squeeze_price_condition_not_met():
+    now_ms = 100_000_000.0
+    state = _make_squeeze_state(now_ms)
+    # Set oldest close very close to current price (only 0.3% up)
+    state.aggs[0] = (state.aggs[0][0], 42.17, state.aggs[0][2])
+    result = check_squeeze(
+        state, window_secs=60, vol_multiplier=2.0,
+        price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
+    )
+    assert result is False
+
+
+def test_check_squeeze_uptick_condition_not_met():
+    now_ms = 100_000_000.0
+    state = _make_squeeze_state(now_ms)
+    # Flip all trades to downtick
+    state.trades = deque(
+        (ts, price, size, False) for ts, price, size, _ in state.trades
+    )
+    result = check_squeeze(
+        state, window_secs=60, vol_multiplier=2.0,
+        price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
+    )
+    assert result is False
+
+
+def test_check_squeeze_too_few_data_points():
+    state = TickerState()
+    now_ms = 100_000_000.0
+    state.trades.append((now_ms - 5_000, 42.0, 100, True))
+    state.aggs.append((now_ms - 5_000, 41.0, 1000))
+    result = check_squeeze(
+        state, window_secs=60, vol_multiplier=2.0,
+        price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
+    )
+    assert result is False
+
+
+def _make_reversal_state(now_ms: float) -> TickerState:
+    """Builds a state that satisfies both reversal conditions."""
+    state = TickerState()
+    base = now_ms - 60_000
+    last_price = 45.0
+    for i in range(60):
+        price = 45.0 - i * 0.05          # trending down to ~42.0
+        state.trades.append((base + i * 1_000, price, 200, price > last_price))
+        last_price = price
+
+    # Oldest agg close 3.0% above current
+    state.aggs.append((base, 45.0, 1000))
+    state.aggs.append((now_ms - 1_000, 42.65, 2000))
+    state.last_price = 42.65
+    return state
+
+
+def test_check_reversal_both_conditions_met():
+    now_ms = 100_000_000.0
+    state = _make_reversal_state(now_ms)
+    result = check_reversal(
+        state, window_secs=60, price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
+    )
+    assert result is True
+
+
+def test_check_reversal_price_not_negative_enough():
+    now_ms = 100_000_000.0
+    state = _make_reversal_state(now_ms)
+    # Set oldest close very close to current (only 0.3% above)
+    state.aggs[0] = (state.aggs[0][0], 42.78, state.aggs[0][2])
+    result = check_reversal(
+        state, window_secs=60, price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
+    )
+    assert result is False
+
+
+def test_check_reversal_downtick_not_dominant():
+    now_ms = 100_000_000.0
+    state = _make_reversal_state(now_ms)
+    # Flip all trades to uptick — downtick ratio drops to 0
+    state.trades = deque(
+        (ts, price, size, True) for ts, price, size, _ in state.trades
+    )
+    result = check_reversal(
+        state, window_secs=60, price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
+    )
+    assert result is False
+
+
+def test_check_reversal_too_few_data_points():
+    state = TickerState()
+    now_ms = 100_000_000.0
+    state.trades.append((now_ms - 5_000, 42.0, 100, False))
+    state.aggs.append((now_ms - 5_000, 45.0, 1000))
+    result = check_reversal(
+        state, window_secs=60, price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
+    )
+    assert result is False
