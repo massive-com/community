@@ -138,3 +138,32 @@ def check_reversal(
         return False
 
     return True
+
+
+def check_luld_signals(state: TickerState, band_pct: float) -> list[str]:
+    """Returns a list of LULD alert types to fire based on current state."""
+    if state.last_luld is None or state.last_price == 0.0:
+        return []
+
+    alerts = []
+    luld = state.last_luld
+    indicators = luld.indicators or []
+
+    if 17 in indicators:
+        alerts.append("HALT")
+    if 18 in indicators:
+        alerts.append("RESUMPTION")
+
+    threshold = band_pct / 100
+
+    if luld.high_price and luld.high_price > 0:
+        upper_gap = (luld.high_price - state.last_price) / state.last_price
+        if 0.0 <= upper_gap <= threshold:
+            alerts.append("UPPER BAND")
+
+    if luld.low_price and luld.low_price > 0:
+        lower_gap = (state.last_price - luld.low_price) / state.last_price
+        if 0.0 <= lower_gap <= threshold:
+            alerts.append("LOWER BAND")
+
+    return alerts

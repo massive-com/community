@@ -219,3 +219,70 @@ def test_check_reversal_too_few_data_points():
         state, window_secs=60, price_pct=2.0, uptick_ratio=0.65, now_ms=now_ms,
     )
     assert result is False
+
+
+from squeeze_monitor import check_luld_signals
+from unittest.mock import MagicMock
+
+
+def _make_luld(high: float, low: float, indicators: list) -> object:
+    m = MagicMock()
+    m.high_price = high
+    m.low_price = low
+    m.indicators = indicators
+    return m
+
+
+def test_luld_halt_indicator():
+    state = TickerState()
+    state.last_price = 42.0
+    state.last_luld = _make_luld(high=45.0, low=38.0, indicators=[17])
+    alerts = check_luld_signals(state, band_pct=1.0)
+    assert "HALT" in alerts
+
+
+def test_luld_resumption_indicator():
+    state = TickerState()
+    state.last_price = 42.0
+    state.last_luld = _make_luld(high=45.0, low=38.0, indicators=[18])
+    alerts = check_luld_signals(state, band_pct=1.0)
+    assert "RESUMPTION" in alerts
+
+
+def test_luld_upper_band_approach():
+    state = TickerState()
+    state.last_price = 44.60   # within 0.9% of upper band at 45.0
+    state.last_luld = _make_luld(high=45.0, low=38.0, indicators=[])
+    alerts = check_luld_signals(state, band_pct=1.0)
+    assert "UPPER BAND" in alerts
+
+
+def test_luld_lower_band_approach():
+    state = TickerState()
+    state.last_price = 38.30   # within 0.8% of lower band at 38.0
+    state.last_luld = _make_luld(high=45.0, low=38.0, indicators=[])
+    alerts = check_luld_signals(state, band_pct=1.0)
+    assert "LOWER BAND" in alerts
+
+
+def test_luld_no_signals_mid_range():
+    state = TickerState()
+    state.last_price = 42.0    # mid-range, not near either band
+    state.last_luld = _make_luld(high=45.0, low=38.0, indicators=[])
+    alerts = check_luld_signals(state, band_pct=1.0)
+    assert alerts == []
+
+
+def test_luld_no_luld_state():
+    state = TickerState()
+    state.last_price = 42.0
+    alerts = check_luld_signals(state, band_pct=1.0)
+    assert alerts == []
+
+
+def test_luld_no_price():
+    state = TickerState()
+    state.last_price = 0.0
+    state.last_luld = _make_luld(high=45.0, low=38.0, indicators=[])
+    alerts = check_luld_signals(state, band_pct=1.0)
+    assert alerts == []
