@@ -1,4 +1,3 @@
-import time
 from collections import deque
 from squeeze_monitor import TickerState, trim_window, is_cooled_down, mark_fired
 
