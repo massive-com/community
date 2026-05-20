@@ -286,3 +286,49 @@ def test_luld_no_price():
     state.last_luld = _make_luld(high=45.0, low=38.0, indicators=[])
     alerts = check_luld_signals(state, band_pct=1.0)
     assert alerts == []
+
+
+from squeeze_monitor import prefetch_ticker_data
+from unittest.mock import MagicMock, patch
+
+
+def test_prefetch_returns_none_on_empty_response():
+    mock_client = MagicMock()
+    mock_client.list_stocks_floats.return_value = iter([])
+    mock_client.list_financials_ratios.return_value = iter([])
+
+    with patch("squeeze_monitor.RESTClient", return_value=mock_client):
+        result = prefetch_ticker_data(["GME"], api_key="fake")
+
+    assert result["GME"]["free_float_pct"] is None
+    assert result["GME"]["avg_volume"] is None
+
+
+def test_prefetch_extracts_float_and_volume():
+    mock_float = MagicMock()
+    mock_float.free_float_percent = 12.5
+
+    mock_ratio = MagicMock()
+    mock_ratio.average_volume = 8_500_000.0
+
+    mock_client = MagicMock()
+    mock_client.list_stocks_floats.return_value = iter([mock_float])
+    mock_client.list_financials_ratios.return_value = iter([mock_ratio])
+
+    with patch("squeeze_monitor.RESTClient", return_value=mock_client):
+        result = prefetch_ticker_data(["GME"], api_key="fake")
+
+    assert result["GME"]["free_float_pct"] == 12.5
+    assert result["GME"]["avg_volume"] == 8_500_000.0
+
+
+def test_prefetch_continues_on_api_error():
+    mock_client = MagicMock()
+    mock_client.list_stocks_floats.side_effect = Exception("API error")
+    mock_client.list_financials_ratios.side_effect = Exception("API error")
+
+    with patch("squeeze_monitor.RESTClient", return_value=mock_client):
+        result = prefetch_ticker_data(["GME"], api_key="fake")
+
+    assert result["GME"]["free_float_pct"] is None
+    assert result["GME"]["avg_volume"] is None

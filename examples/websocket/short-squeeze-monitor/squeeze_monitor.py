@@ -19,6 +19,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
+from massive import RESTClient
 
 load_dotenv()
 
@@ -167,3 +168,33 @@ def check_luld_signals(state: TickerState, band_pct: float) -> list[str]:
             alerts.append("LOWER BAND")
 
     return alerts
+
+
+def prefetch_ticker_data(tickers: list[str], api_key: str) -> dict[str, dict]:
+    """
+    Queries Massive REST API for free float % and average volume per ticker.
+    Used in watchlist mode only. Returns None values for any ticker with no data.
+    """
+    client = RESTClient(api_key=api_key)
+    result: dict[str, dict] = {}
+
+    for ticker in tickers:
+        data: dict = {"free_float_pct": None, "avg_volume": None}
+
+        try:
+            floats = list(client.list_stocks_floats(ticker=ticker, limit=1))
+            if floats:
+                data["free_float_pct"] = floats[0].free_float_percent
+        except Exception as exc:
+            print(f"[warn] float data unavailable for {ticker}: {exc}", flush=True)
+
+        try:
+            ratios = list(client.list_financials_ratios(ticker=ticker, limit=1))
+            if ratios:
+                data["avg_volume"] = ratios[0].average_volume
+        except Exception as exc:
+            print(f"[warn] ratio data unavailable for {ticker}: {exc}", flush=True)
+
+        result[ticker] = data
+
+    return result
