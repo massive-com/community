@@ -19,6 +19,7 @@ import type {
   ScheduleEvent,
 } from "@/lib/types";
 import { detectSizeFromName } from "@/lib/curated-products";
+import type { WSTrade, WSQuote } from "@/lib/useFuturesWS";
 
 interface ContractDetail {
   ticker: string;
@@ -35,6 +36,10 @@ interface Props {
   curve: CurveResponse | null;
   curveLoading?: boolean;
   onSwitchProduct: (code: string) => void;
+  wsLastTrade?: WSTrade | null;
+  wsLatestQuote?: WSQuote | null;
+  wsConnected?: boolean;
+  wsConnectionLimited?: boolean;
 }
 
 export function HeroCard({
@@ -43,6 +48,10 @@ export function HeroCard({
   curve,
   curveLoading,
   onSwitchProduct,
+  wsLastTrade,
+  wsLatestQuote,
+  wsConnected,
+  wsConnectionLimited,
 }: Props) {
   const { data, error } = useSWR<ContractDetail>(
     ticker ? `/api/contract/${ticker}` : null,
@@ -72,12 +81,18 @@ export function HeroCard({
   const isStale = !!data?.is_stale;
   const contract = data?.contract;
 
+  // WS price takes priority over REST snapshot when connected, a trade has arrived,
+  // and we have a prior_reference loaded (so the change calculation won't flash "No ref").
   const lastFromHistory = null;
-  const price = isStale
+  const restPrice = isStale
     ? null
     : (lastTrade?.price ?? session?.close ?? lastFromHistory ?? null);
-
   const prev = data?.prior_reference;
+  const price =
+    wsConnected && wsLastTrade && typeof prev === "number" && prev > 0
+      ? wsLastTrade.price
+      : restPrice;
+
   let change: number | null = null;
   let changePct: number | null = null;
   if (typeof price === "number" && typeof prev === "number" && prev > 0) {
@@ -96,8 +111,9 @@ export function HeroCard({
       ? Math.max(0, Math.min(1, (price - low) / (high - low)))
       : null;
 
-  const bid = lastQuote?.bid;
-  const ask = lastQuote?.ask;
+  // WS quote takes priority over REST snapshot when connected.
+  const bid = wsConnected && wsLatestQuote ? wsLatestQuote.bid_price : lastQuote?.bid;
+  const ask = wsConnected && wsLatestQuote ? wsLatestQuote.ask_price : lastQuote?.ask;
   const spread =
     typeof bid === "number" && typeof ask === "number" && ask >= bid
       ? ask - bid
@@ -179,28 +195,46 @@ export function HeroCard({
                       : "Standard"}
               </span>
             )}
-            {timeframe && !isStale && (
+            {wsConnected ? (
               <span
-                className={`text-[10px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                  timeframe === "REAL-TIME"
-                    ? "bg-accent-green/15 text-accent-green border border-accent-green/30"
-                    : "bg-amber-500/10 text-amber-300 border border-amber-500/30"
-                }`}
-                title={
-                  timeframe === "REAL-TIME"
-                    ? "Real-time data delivery (REST snapshot polled every 15s). Not a streaming WebSocket."
-                    : "Delayed data (typically 10-15 min) from REST snapshot, polled every 15s."
-                }
+                className="text-[10px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wider bg-accent-green/15 text-accent-green border border-accent-green/30"
+                title="Price and bid/ask streaming live via WebSocket. Session stats (volume, range) poll every 15s via REST."
               >
-                {timeframe === "REAL-TIME" ? "RT · REST" : "DELAYED · REST"}
+                RT · WS
+              </span>
+            ) : wsConnectionLimited ? (
+              <span
+                className="text-[10px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                title="WebSocket connection limit reached on this account. Falling back to REST polling. Retrying in ~2 min."
+              >
+                WS limit · REST
+              </span>
+            ) : (
+              timeframe && !isStale && (
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                    timeframe === "REAL-TIME"
+                      ? "bg-accent-green/15 text-accent-green border border-accent-green/30"
+                      : "bg-amber-500/10 text-amber-300 border border-amber-500/30"
+                  }`}
+                  title={
+                    timeframe === "REAL-TIME"
+                      ? "Real-time data delivery (REST snapshot polled every 15s). Not a streaming WebSocket."
+                      : "Delayed data (typically 10-15 min) from REST snapshot, polled every 15s."
+                  }
+                >
+                  {timeframe === "REAL-TIME" ? "RT · REST" : "DELAYED · REST"}
+                </span>
+              )
+            )}
+            {!wsConnected && (
+              <span
+                className="text-[10px] font-mono text-zinc-500"
+                title="Snapshot polls every 15 seconds. Watchlist polls every 30 seconds. Term structure polls every 60 seconds."
+              >
+                ↻ 15s
               </span>
             )}
-            <span
-              className="text-[10px] font-mono text-zinc-500"
-              title="Snapshot polls every 15 seconds. Watchlist polls every 30 seconds. Term structure polls every 60 seconds."
-            >
-              ↻ 15s
-            </span>
             {isStale && (
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wider bg-zinc-700/40 text-zinc-400 border border-zinc-700">
                 no recent activity

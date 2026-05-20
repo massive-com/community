@@ -4,58 +4,58 @@ import useSWR from "swr";
 import { fmtPrice, fmtInt, fmtNanos } from "@/lib/format";
 import { errorMessage, fetchJson } from "@/lib/fetcher";
 import { PanelError } from "./PanelError";
-import type { Quote, Snapshot, Trade } from "@/lib/types";
+import type { Quote, Trade } from "@/lib/types";
+import type { WSTrade, WSQuote } from "@/lib/useFuturesWS";
 
-interface ContractDetail {
-  snapshot: Snapshot | null;
+interface TradesResponse {
   recent_trades: Trade[];
   recent_quotes: Quote[];
 }
 
 interface Props {
   ticker: string | null;
+  wsTrades?: WSTrade[];
+  wsQuotes?: WSQuote[];
+  wsConnected?: boolean;
 }
 
-export function TimeAndSales({ ticker }: Props) {
-  const { data, error } = useSWR<ContractDetail>(
-    ticker ? `/api/contract/${ticker}` : null,
+export function TimeAndSales({ ticker, wsTrades = [], wsQuotes = [], wsConnected }: Props) {
+  const { data, error } = useSWR<TradesResponse>(
+    ticker ? `/api/trades/${ticker}` : null,
     fetchJson,
-    { refreshInterval: 15_000 }
+    { refreshInterval: 5_000 }
   );
   const loading = !!ticker && !data && !error;
 
-  const trades = data?.recent_trades ?? [];
-  const quotes = data?.recent_quotes ?? [];
-  const fallbackQuote = data?.snapshot?.last_quote;
+  const restQuotes = data?.recent_quotes ?? [];
+  const fallbackQuote = restQuotes[0];
 
-  // Tape speed: trades-per-second across the most recent batch.
+  // Use WS trades only when connected AND we have fresh trades in the buffer.
+  // If WS is connected but hasn't delivered any fresh trades yet (e.g. staging
+  // replay was filtered, or market is briefly quiet), fall back to REST snapshot.
+  const usingWS = !!wsConnected && wsTrades.length > 0;
+  const trades: Array<{ price: number; size: number; timestamp: number; sequence_number?: number }> =
+    usingWS ? wsTrades : (data?.recent_trades ?? []);
+
+  // Tape speed across the most recent batch.
   let tps: number | null = null;
   if (trades.length >= 2) {
     const first = trades[0].timestamp;
     const last = trades[trades.length - 1].timestamp;
     const spanSec = (first - last) / 1_000_000_000;
-    if (spanSec > 0) {
-      tps = (trades.length - 1) / spanSec;
-    }
+    if (spanSec > 0) tps = (trades.length - 1) / spanSec;
   }
   const tpsLabel =
-    tps === null
-      ? "N/A"
-      : tps >= 10
-        ? `${tps.toFixed(0)}/s`
-        : tps >= 1
-          ? `${tps.toFixed(1)}/s`
-          : tps >= 0.1
-            ? `${tps.toFixed(2)}/s`
-            : "<0.1/s";
+    tps === null ? "N/A"
+    : tps >= 10 ? `${tps.toFixed(0)}/s`
+    : tps >= 1 ? `${tps.toFixed(1)}/s`
+    : tps >= 0.1 ? `${tps.toFixed(2)}/s`
+    : "<0.1/s";
   const tpsHeat =
-    tps === null
-      ? "text-zinc-500"
-      : tps >= 5
-        ? "text-emerald-300"
-        : tps >= 1
-          ? "text-amber-300"
-          : "text-zinc-400";
+    tps === null ? "text-zinc-500"
+    : tps >= 5 ? "text-emerald-300"
+    : tps >= 1 ? "text-amber-300"
+    : "text-zinc-400";
 
   return (
     <section className="terminal-panel rounded-lg overflow-hidden flex flex-col h-full">
@@ -65,10 +65,19 @@ export function TimeAndSales({ ticker }: Props) {
         </h3>
         <span
           className="text-[10px] font-mono text-zinc-500"
-          title="Aggressor color uses the nearest available quote at or before each trade timestamp."
+          title="Aggressor color uses the nearest quote at or before each trade timestamp."
         >
           {ticker ?? ""}
         </span>
+        {/* Live indicator dot — green when WS active, dim when on REST fallback */}
+        {wsConnected !== undefined && ticker && (
+          <span
+            className={`inline-block w-1.5 h-1.5 rounded-full ${
+              wsConnected ? "bg-accent-green" : "bg-zinc-600"
+            }`}
+            title={wsConnected ? "Live via WebSocket." : "WebSocket disconnected — REST fallback."}
+          />
+        )}
         {tps !== null && (
           <span
             className={`ml-auto text-[10px] font-mono tnum ${tpsHeat}`}
@@ -81,10 +90,7 @@ export function TimeAndSales({ ticker }: Props) {
       <div className="flex-1 overflow-y-auto text-[11px] font-mono tnum">
         {error && (
           <div className="p-3">
-            <PanelError
-              compact
-              message={`Trades unavailable: ${errorMessage(error)}`}
-            />
+            <PanelError compact message={`Trades unavailable: ${errorMessage(error)}`} />
           </div>
         )}
         {!error && trades.length === 0 && (
@@ -94,6 +100,11 @@ export function TimeAndSales({ ticker }: Props) {
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent-blue animate-pulse" />
                 loading trades...
               </span>
+            ) : wsConnected && ticker ? (
+              <span className="inline-flex items-center gap-2 font-mono text-[11px]">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse" />
+                waiting for trades...
+              </span>
             ) : ticker ? (
               "No recent trades."
             ) : (
@@ -102,17 +113,23 @@ export function TimeAndSales({ ticker }: Props) {
           </div>
         )}
         {trades.map((t, i) => {
-          const quote = quotes.find((q) => q.timestamp <= t.timestamp);
-          const bid = quote?.bid_price ?? fallbackQuote?.bid;
-          const ask = quote?.ask_price ?? fallbackQuote?.ask;
+          // Find the nearest quote at or before this trade's timestamp for aggressor coloring.
+          let bid: number | undefined;
+          let ask: number | undefined;
+          if (usingWS) {
+            const q = wsQuotes.find((q) => q.timestamp <= t.timestamp);
+            bid = q?.bid_price;
+            ask = q?.ask_price;
+          } else {
+            const q = restQuotes.find((q) => q.timestamp <= t.timestamp);
+            bid = q?.bid_price ?? fallbackQuote?.bid_price;
+            ask = q?.ask_price ?? fallbackQuote?.ask_price;
+          }
           const aggressor =
-            typeof bid === "number" &&
-            typeof ask === "number"
-              ? t.price >= ask
-                ? "buy"
-                : t.price <= bid
-                  ? "sell"
-                  : null
+            typeof bid === "number" && typeof ask === "number"
+              ? t.price >= ask ? "buy"
+              : t.price <= bid ? "sell"
+              : null
               : null;
           return (
             <div
@@ -122,11 +139,9 @@ export function TimeAndSales({ ticker }: Props) {
               <span className="text-zinc-500">{fmtNanos(t.timestamp)}</span>
               <span
                 className={
-                  aggressor === "buy"
-                    ? "text-emerald-300"
-                    : aggressor === "sell"
-                      ? "text-rose-300"
-                      : "text-zinc-100"
+                  aggressor === "buy" ? "text-emerald-300"
+                  : aggressor === "sell" ? "text-rose-300"
+                  : "text-zinc-100"
                 }
               >
                 {fmtPrice(t.price)}

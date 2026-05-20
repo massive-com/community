@@ -14,6 +14,7 @@ import { TimeAndSales } from "@/components/TimeAndSales";
 import { HistoryChart } from "@/components/HistoryChart";
 import type { CurveResponse } from "@/lib/types";
 import { errorMessage, fetchJson } from "@/lib/fetcher";
+import { useFuturesWS } from "@/lib/useFuturesWS";
 
 export default function Page() {
   return (
@@ -42,6 +43,14 @@ function PageInner() {
   } = useSWR<CurveResponse>(`/api/product/${productCode}`, fetchJson, {
     refreshInterval: 60_000,
   });
+
+  const {
+    trades: wsTrades,
+    quotes: wsQuotes,
+    latestQuote: wsLatestQuote,
+    connected: wsConnected,
+    connectionLimited: wsConnectionLimited,
+  } = useFuturesWS(selectedTicker);
 
   // Track contract loading at the page level so the overlay waits for the
   // panels that depend on this data (HeroCard, PositionSizer, TimeAndSales).
@@ -98,6 +107,10 @@ function PageInner() {
             curve={curve ?? null}
             curveLoading={curveLoading}
             onSwitchProduct={handleProductSelect}
+            wsLastTrade={wsTrades[0] ?? null}
+            wsLatestQuote={wsLatestQuote}
+            wsConnected={wsConnected}
+            wsConnectionLimited={wsConnectionLimited}
           />
 
           <div className="flex-1 min-h-0 flex flex-col px-5 pt-4 pb-3 gap-4 overflow-hidden">
@@ -132,7 +145,12 @@ function PageInner() {
                 selectedTicker={selectedTicker}
                 onSelectTicker={handleTickerSelect}
               />
-              <TimeAndSales ticker={selectedTicker} />
+              <TimeAndSales
+                ticker={selectedTicker}
+                wsTrades={wsTrades}
+                wsQuotes={wsQuotes}
+                wsConnected={wsConnected}
+              />
             </div>
           </div>
 
