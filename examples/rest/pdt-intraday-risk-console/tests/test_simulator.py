@@ -12,7 +12,7 @@ def test_intraday_deficit_is_largest_negative_iml_magnitude():
     state = AccountState(
         starting_cash=1000.0,
         positions={"AAPL": 0},
-        maintenance_haircut=0.30,
+        maintenance_haircut=0.60,
     )
 
     # Buy 10 shares at $200 => spend $2000, cash goes negative.

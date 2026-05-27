@@ -55,18 +55,28 @@ def _maintenance_required(
     return haircut * total
 
 
+def _equity(cash: float, positions: Mapping[str, int], prices: Mapping[str, float]) -> float:
+    total = float(cash)
+    for ticker, qty in positions.items():
+        px = float(prices.get(ticker, 0.0))
+        total += qty * px
+    return total
+
+
 def compute_iml(
     cash: float, positions: Mapping[str, int], prices: Mapping[str, float], haircut: float
 ) -> float:
     """
     Educational IML proxy:
-      IML = cash - maintenance_required
+      equity = cash + sum(qty * price)
+      IML = equity - maintenance_required
 
-    Interpretable as "cash buffer" above the simplified maintenance requirement.
+    Interpretable as "equity buffer" above the simplified maintenance requirement.
     Negative => additional cash needed in this simplified model.
     """
     req = _maintenance_required(positions, prices, haircut)
-    return cash - req
+    equity = _equity(cash, positions, prices)
+    return equity - req
 
 
 def simulate_day(state: AccountState, actions: list[Action]) -> SimulationResult:
