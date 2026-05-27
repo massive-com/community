@@ -9,6 +9,13 @@ dependencies = [
   "requests>=2.32.0",
 ]
 
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [project.optional-dependencies]
 dev = [
   "pytest>=8.2.0",
