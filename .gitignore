@@ -78,3 +78,5 @@ output/
 reports/
 Claude.md  
 .claude/
+.playwright-mcp/
+docs/
