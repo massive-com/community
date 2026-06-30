@@ -1,0 +1,17 @@
+{
+  "id": "indices-sectors",
+  "segment": "indices",
+  "label": "Sectors",
+  "constituents": [
+    { "ticker": "A1TEC", "wsSymbol": "I:A1TEC", "name": "Dow Jones Americas Technology Index", "group": "Sector", "marketCap": 100 },
+    { "ticker": "A1FIN", "wsSymbol": "I:A1FIN", "name": "Dow Jones Americas Financials Index", "group": "Sector", "marketCap": 100 },
+    { "ticker": "A1ENE", "wsSymbol": "I:A1ENE", "name": "Dow Jones Americas Oil & Gas Index", "group": "Sector", "marketCap": 100 },
+    { "ticker": "A1HCR", "wsSymbol": "I:A1HCR", "name": "Dow Jones Americas Health Care Index", "group": "Sector", "marketCap": 100 },
+    { "ticker": "A1IDU", "wsSymbol": "I:A1IDU", "name": "Dow Jones Americas Industrials Index", "group": "Sector", "marketCap": 100 },
+    { "ticker": "A1BSC", "wsSymbol": "I:A1BSC", "name": "Dow Jones Americas Basic Materials Index", "group": "Sector", "marketCap": 100 },
+    { "ticker": "A1CYC", "wsSymbol": "I:A1CYC", "name": "Dow Jones Americas Consumer Services Index", "group": "Sector", "marketCap": 100 },
+    { "ticker": "A1NCY", "wsSymbol": "I:A1NCY", "name": "Dow Jones Americas Consumer Goods Index", "group": "Sector", "marketCap": 100 },
+    { "ticker": "A1TLS", "wsSymbol": "I:A1TLS", "name": "Dow Jones Americas Telecommunications Index", "group": "Sector", "marketCap": 100 },
+    { "ticker": "A1UTI", "wsSymbol": "I:A1UTI", "name": "Dow Jones Americas Utilities Index", "group": "Sector", "marketCap": 100 }
+  ]
+}

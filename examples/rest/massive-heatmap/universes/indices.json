@@ -1,0 +1,12 @@
+{
+  "id": "indices",
+  "segment": "indices",
+  "label": "Major Indices",
+  "constituents": [
+    { "ticker": "SPX", "wsSymbol": "I:SPX", "name": "S&P 500", "group": "Index", "marketCap": 100 },
+    { "ticker": "NDX", "wsSymbol": "I:NDX", "name": "Nasdaq 100", "group": "Index", "marketCap": 100 },
+    { "ticker": "DJI", "wsSymbol": "I:DJI", "name": "Dow Jones Industrial Average", "group": "Index", "marketCap": 100 },
+    { "ticker": "RUT", "wsSymbol": "I:RUT", "name": "Russell 2000", "group": "Index", "marketCap": 100 },
+    { "ticker": "VIX", "wsSymbol": "I:VIX", "name": "CBOE Volatility Index", "group": "Index", "marketCap": 100 }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "id": "crypto-defi",
+  "segment": "crypto",
+  "label": "DeFi",
+  "constituents": [
+    {
+      "ticker": "UNI",
+      "wsSymbol": "UNI-USD",
+      "name": "Uniswap",
+      "group": "DeFi",
+      "marketCap": 1786765124
+    },
+    {
+      "ticker": "AAVE",
+      "wsSymbol": "AAVE-USD",
+      "name": "Aave",
+      "group": "DeFi",
+      "marketCap": 1159450185
+    },
+    {
+      "ticker": "MKR",
+      "wsSymbol": "MKR-USD",
+      "name": "Maker",
+      "group": "DeFi",
+      "marketCap": 1800000000
+    },
+    {
+      "ticker": "LDO",
+      "wsSymbol": "LDO-USD",
+      "name": "Lido DAO",
+      "group": "DeFi",
+      "marketCap": 216297567
+    },
+    {
+      "ticker": "CRV",
+      "wsSymbol": "CRV-USD",
+      "name": "Curve DAO",
+      "group": "DeFi",
+      "marketCap": 302034009
+    },
+    {
+      "ticker": "SNX",
+      "wsSymbol": "SNX-USD",
+      "name": "Synthetix",
+      "group": "DeFi",
+      "marketCap": 150000000
+    },
+    {
+      "ticker": "COMP",
+      "wsSymbol": "COMP-USD",
+      "name": "Compound",
+      "group": "DeFi",
+      "marketCap": 160436323
+    },
+    {
+      "ticker": "LINK",
+      "wsSymbol": "LINK-USD",
+      "name": "Chainlink",
+      "group": "DeFi",
+      "marketCap": 5602174899
+    },
+    {
+      "ticker": "INJ",
+      "wsSymbol": "INJ-USD",
+      "name": "Injective",
+      "group": "DeFi",
+      "marketCap": 433479379
+    },
+    {
+      "ticker": "RUNE",
+      "wsSymbol": "RUNE-USD",
+      "name": "THORChain",
+      "group": "DeFi",
+      "marketCap": 500000000
+    },
+    {
+      "ticker": "GRT",
+      "wsSymbol": "GRT-USD",
+      "name": "The Graph",
+      "group": "DeFi",
+      "marketCap": 198937035
+    }
+  ]
+}

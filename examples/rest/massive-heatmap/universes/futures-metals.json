@@ -1,0 +1,42 @@
+{
+  "id": "futures-metals",
+  "segment": "futures",
+  "label": "Metals Futures",
+  "constituents": [
+    {
+      "ticker": "GC",
+      "wsSymbol": "GCQ6",
+      "name": "Gold",
+      "group": "Metals",
+      "marketCap": 130165
+    },
+    {
+      "ticker": "SI",
+      "wsSymbol": "SIN6",
+      "name": "Silver",
+      "group": "Metals",
+      "marketCap": 33990
+    },
+    {
+      "ticker": "HG",
+      "wsSymbol": "HGN6",
+      "name": "Copper",
+      "group": "Metals",
+      "marketCap": 30258
+    },
+    {
+      "ticker": "PL",
+      "wsSymbol": "PLN6",
+      "name": "Platinum",
+      "group": "Metals",
+      "marketCap": 10297
+    },
+    {
+      "ticker": "PA",
+      "wsSymbol": "PAU6",
+      "name": "Palladium",
+      "group": "Metals",
+      "marketCap": 4120
+    }
+  ]
+}

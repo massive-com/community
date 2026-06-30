@@ -1,0 +1,105 @@
+{
+  "id": "crypto-l1",
+  "segment": "crypto",
+  "label": "Layer 1s",
+  "constituents": [
+    {
+      "ticker": "BTC",
+      "wsSymbol": "BTC-USD",
+      "name": "Bitcoin",
+      "group": "Layer 1",
+      "marketCap": 1222824846528
+    },
+    {
+      "ticker": "ETH",
+      "wsSymbol": "ETH-USD",
+      "name": "Ethereum",
+      "group": "Layer 1",
+      "marketCap": 198415095297
+    },
+    {
+      "ticker": "SOL",
+      "wsSymbol": "SOL-USD",
+      "name": "Solana",
+      "group": "Layer 1",
+      "marketCap": 39883113178
+    },
+    {
+      "ticker": "ADA",
+      "wsSymbol": "ADA-USD",
+      "name": "Cardano",
+      "group": "Layer 1",
+      "marketCap": 5401402055
+    },
+    {
+      "ticker": "AVAX",
+      "wsSymbol": "AVAX-USD",
+      "name": "Avalanche",
+      "group": "Layer 1",
+      "marketCap": 2724658592
+    },
+    {
+      "ticker": "DOT",
+      "wsSymbol": "DOT-USD",
+      "name": "Polkadot",
+      "group": "Layer 1",
+      "marketCap": 1503774003
+    },
+    {
+      "ticker": "NEAR",
+      "wsSymbol": "NEAR-USD",
+      "name": "NEAR Protocol",
+      "group": "Layer 1",
+      "marketCap": 2507333593
+    },
+    {
+      "ticker": "ATOM",
+      "wsSymbol": "ATOM-USD",
+      "name": "Cosmos",
+      "group": "Layer 1",
+      "marketCap": 856918556
+    },
+    {
+      "ticker": "APT",
+      "wsSymbol": "APT-USD",
+      "name": "Aptos",
+      "group": "Layer 1",
+      "marketCap": 523283883
+    },
+    {
+      "ticker": "SUI",
+      "wsSymbol": "SUI-USD",
+      "name": "Sui",
+      "group": "Layer 1",
+      "marketCap": 2757284692
+    },
+    {
+      "ticker": "TRX",
+      "wsSymbol": "TRX-USD",
+      "name": "TRON",
+      "group": "Layer 1",
+      "marketCap": 31173784913
+    },
+    {
+      "ticker": "ALGO",
+      "wsSymbol": "ALGO-USD",
+      "name": "Algorand",
+      "group": "Layer 1",
+      "marketCap": 794214149
+    },
+    {
+      "ticker": "HBAR",
+      "wsSymbol": "HBAR-USD",
+      "name": "Hedera",
+      "group": "Layer 1",
+      "marketCap": 3266821871
+    },
+    {
+      "ticker": "TON",
+      "wsSymbol": "TON-USD",
+      "name": "Toncoin",
+      "group": "Layer 1",
+      "marketCap": 4200000000
+    }
+  ]
+}

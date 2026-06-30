@@ -1,0 +1,77 @@
+{
+  "id": "etf-broad",
+  "segment": "etfs",
+  "label": "Broad Market",
+  "constituents": [
+    {
+      "ticker": "SPY",
+      "wsSymbol": "SPY",
+      "name": "SPDR S&P 500 ETF Trust",
+      "group": "Broad",
+      "marketCap": 783070
+    },
+    {
+      "ticker": "QQQ",
+      "wsSymbol": "QQQ",
+      "name": "Invesco QQQ Trust",
+      "group": "Broad",
+      "marketCap": 480530
+    },
+    {
+      "ticker": "IWM",
+      "wsSymbol": "IWM",
+      "name": "iShares Russell 2000 ETF",
+      "group": "Broad",
+      "marketCap": 88000
+    },
+    {
+      "ticker": "DIA",
+      "wsSymbol": "DIA",
+      "name": "SPDR Dow Jones Industrial Average ETF",
+      "group": "Broad",
+      "marketCap": 34000
+    },
+    {
+      "ticker": "VTI",
+      "wsSymbol": "VTI",
+      "name": "Vanguard Total Stock Market ETF",
+      "group": "Broad",
+      "marketCap": 490000
+    },
+    {
+      "ticker": "VOO",
+      "wsSymbol": "VOO",
+      "name": "Vanguard S&P 500 ETF",
+      "group": "Broad",
+      "marketCap": 590000
+    },
+    {
+      "ticker": "VEA",
+      "wsSymbol": "VEA",
+      "name": "Vanguard FTSE Developed Markets ETF",
+      "group": "Broad",
+      "marketCap": 120000
+    },
+    {
+      "ticker": "VWO",
+      "wsSymbol": "VWO",
+      "name": "Vanguard FTSE Emerging Markets ETF",
+      "group": "Broad",
+      "marketCap": 75000
+    },
+    {
+      "ticker": "EFA",
+      "wsSymbol": "EFA",
+      "name": "iShares MSCI EAFE ETF",
+      "group": "Broad",
+      "marketCap": 55000
+    },
+    {
+      "ticker": "EEM",
+      "wsSymbol": "EEM",
+      "name": "iShares MSCI Emerging Markets ETF",
+      "group": "Broad",
+      "marketCap": 28000
+    }
+  ]
+}

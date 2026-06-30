@@ -1,0 +1,35 @@
+{
+  "id": "futures-energy",
+  "segment": "futures",
+  "label": "Energy Futures",
+  "constituents": [
+    {
+      "ticker": "CL",
+      "wsSymbol": "CLJ9",
+      "name": "Crude Oil (WTI)",
+      "group": "Energy",
+      "marketCap": 6518
+    },
+    {
+      "ticker": "RB",
+      "wsSymbol": "RBQ6",
+      "name": "RBOB Gasoline",
+      "group": "Energy",
+      "marketCap": 13770
+    },
+    {
+      "ticker": "HO",
+      "wsSymbol": "HOQ6",
+      "name": "Heating Oil",
+      "group": "Energy",
+      "marketCap": 10445
+    },
+    {
+      "ticker": "BZ",
+      "wsSymbol": "BZF0",
+      "name": "Brent Crude",
+      "group": "Energy",
+      "marketCap": 1506
+    }
+  ]
+}
