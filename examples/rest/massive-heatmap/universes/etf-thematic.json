@@ -1,0 +1,91 @@
+{
+  "id": "etf-thematic",
+  "segment": "etfs",
+  "label": "Thematic",
+  "constituents": [
+    {
+      "ticker": "SMH",
+      "wsSymbol": "SMH",
+      "name": "VanEck Semiconductor ETF",
+      "group": "Semis",
+      "marketCap": 24000
+    },
+    {
+      "ticker": "XBI",
+      "wsSymbol": "XBI",
+      "name": "SPDR S&P Biotech ETF",
+      "group": "Biotech",
+      "marketCap": 9000
+    },
+    {
+      "ticker": "ARKK",
+      "wsSymbol": "ARKK",
+      "name": "ARK Innovation ETF",
+      "group": "Innovation",
+      "marketCap": 6000
+    },
+    {
+      "ticker": "IBB",
+      "wsSymbol": "IBB",
+      "name": "iShares Biotechnology ETF",
+      "group": "Biotech",
+      "marketCap": 8000
+    },
+    {
+      "ticker": "TAN",
+      "wsSymbol": "TAN",
+      "name": "Invesco Solar ETF",
+      "group": "Clean Energy",
+      "marketCap": 1200
+    },
+    {
+      "ticker": "LIT",
+      "wsSymbol": "LIT",
+      "name": "Global X Lithium & Battery Tech ETF",
+      "group": "Clean Energy",
+      "marketCap": 900
+    },
+    {
+      "ticker": "JETS",
+      "wsSymbol": "JETS",
+      "name": "U.S. Global Jets ETF",
+      "group": "Airlines",
+      "marketCap": 500
+    },
+    {
+      "ticker": "HACK",
+      "wsSymbol": "HACK",
+      "name": "Amplify Cybersecurity ETF",
+      "group": "Cybersecurity",
+      "marketCap": 1800
+    },
+    {
+      "ticker": "SKYY",
+      "wsSymbol": "SKYY",
+      "name": "First Trust Cloud Computing ETF",
+      "group": "Cloud",
+      "marketCap": 5000
+    },
+    {
+      "ticker": "BOTZ",
+      "wsSymbol": "BOTZ",
+      "name": "Global X Robotics & AI ETF",
+      "group": "Robotics",
+      "marketCap": 3500
+    },
+    {
+      "ticker": "ICLN",
+      "wsSymbol": "ICLN",
+      "name": "iShares Global Clean Energy ETF",
+      "group": "Clean Energy",
+      "marketCap": 800
+    },
+    {
+      "ticker": "XOP",
+      "wsSymbol": "XOP",
+      "name": "SPDR S&P Oil & Gas Exploration & Production ETF",
+      "group": "Energy",
+      "marketCap": 4000
+    }
+  ]
+}

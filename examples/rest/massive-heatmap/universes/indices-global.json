@@ -1,0 +1,20 @@
+{
+  "id": "indices-global",
+  "segment": "indices",
+  "label": "Global",
+  "constituents": [
+    { "ticker": "A1DOW", "wsSymbol": "I:A1DOW", "name": "Dow Jones Americas Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "GBDOW", "wsSymbol": "I:GBDOW", "name": "Dow Jones U.K. Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "DEDOW", "wsSymbol": "I:DEDOW", "name": "Dow Jones Germany Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "FRDOW", "wsSymbol": "I:FRDOW", "name": "Dow Jones France Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "JPDOW", "wsSymbol": "I:JPDOW", "name": "Dow Jones Japan Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "DJCHINA", "wsSymbol": "I:DJCHINA", "name": "Dow Jones China Broad Market Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "HKDOW", "wsSymbol": "I:HKDOW", "name": "Dow Jones Hong Kong Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "CADOW", "wsSymbol": "I:CADOW", "name": "Dow Jones Canada Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "DJAU", "wsSymbol": "I:DJAU", "name": "Dow Jones Australia Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "CHDOW", "wsSymbol": "I:CHDOW", "name": "Dow Jones Switzerland Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "KRDOW", "wsSymbol": "I:KRDOW", "name": "Dow Jones South Korea Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "TWDOW", "wsSymbol": "I:TWDOW", "name": "Dow Jones Taiwan Index", "group": "Global", "marketCap": 100 },
+    { "ticker": "SGDOW", "wsSymbol": "I:SGDOW", "name": "Dow Jones Singapore Index", "group": "Global", "marketCap": 100 }
+  ]
+}

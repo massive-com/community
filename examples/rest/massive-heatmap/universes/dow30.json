@@ -1,0 +1,217 @@
+{
+  "id": "dow30",
+  "segment": "stocks",
+  "label": "Dow 30",
+  "constituents": [
+    {
+      "ticker": "AAPL",
+      "wsSymbol": "AAPL",
+      "name": "Apple",
+      "group": "Information Technology",
+      "marketCap": 4322488870800
+    },
+    {
+      "ticker": "AMGN",
+      "wsSymbol": "AMGN",
+      "name": "Amgen",
+      "group": "Health Care",
+      "marketCap": 187284168160
+    },
+    {
+      "ticker": "AXP",
+      "wsSymbol": "AXP",
+      "name": "American Express",
+      "group": "Financials",
+      "marketCap": 230476225916
+    },
+    {
+      "ticker": "BA",
+      "wsSymbol": "BA",
+      "name": "Boeing",
+      "group": "Industrials",
+      "marketCap": 170832998151
+    },
+    {
+      "ticker": "CAT",
+      "wsSymbol": "CAT",
+      "name": "Caterpillar",
+      "group": "Industrials",
+      "marketCap": 453333053347
+    },
+    {
+      "ticker": "CRM",
+      "wsSymbol": "CRM",
+      "name": "Salesforce",
+      "group": "Information Technology",
+      "marketCap": 258000000000
+    },
+    {
+      "ticker": "CSCO",
+      "wsSymbol": "CSCO",
+      "name": "Cisco",
+      "group": "Information Technology",
+      "marketCap": 477504809664
+    },
+    {
+      "ticker": "CVX",
+      "wsSymbol": "CVX",
+      "name": "Chevron",
+      "group": "Energy",
+      "marketCap": 350481368877
+    },
+    {
+      "ticker": "DIS",
+      "wsSymbol": "DIS",
+      "name": "Walt Disney",
+      "group": "Communication Services",
+      "marketCap": 179781027726
+    },
+    {
+      "ticker": "GS",
+      "wsSymbol": "GS",
+      "name": "Goldman Sachs",
+      "group": "Financials",
+      "marketCap": 322867921839
+    },
+    {
+      "ticker": "HD",
+      "wsSymbol": "HD",
+      "name": "Home Depot",
+      "group": "Consumer Discretionary",
+      "marketCap": 323514507474
+    },
+    {
+      "ticker": "HON",
+      "wsSymbol": "HON",
+      "name": "Honeywell",
+      "group": "Industrials",
+      "marketCap": 140905444072
+    },
+    {
+      "ticker": "IBM",
+      "wsSymbol": "IBM",
+      "name": "IBM",
+      "group": "Information Technology",
+      "marketCap": 249013206083
+    },
+    {
+      "ticker": "JNJ",
+      "wsSymbol": "JNJ",
+      "name": "Johnson & Johnson",
+      "group": "Health Care",
+      "marketCap": 575517433426
+    },
+    {
+      "ticker": "JPM",
+      "wsSymbol": "JPM",
+      "name": "JPMorgan Chase",
+      "group": "Financials",
+      "marketCap": 895331945210
+    },
+    {
+      "ticker": "KO",
+      "wsSymbol": "KO",
+      "name": "Coca-Cola",
+      "group": "Consumer Staples",
+      "marketCap": 345532362989
+    },
+    {
+      "ticker": "MCD",
+      "wsSymbol": "MCD",
+      "name": "McDonald's",
+      "group": "Consumer Discretionary",
+      "marketCap": 193016021655
+    },
+    {
+      "ticker": "MMM",
+      "wsSymbol": "MMM",
+      "name": "3M",
+      "group": "Industrials",
+      "marketCap": 84410445520
+    },
+    {
+      "ticker": "MRK",
+      "wsSymbol": "MRK",
+      "name": "Merck",
+      "group": "Health Care",
+      "marketCap": 295391000034
+    },
+    {
+      "ticker": "MSFT",
+      "wsSymbol": "MSFT",
+      "name": "Microsoft",
+      "group": "Information Technology",
+      "marketCap": 2777788873213
+    },
+    {
+      "ticker": "NKE",
+      "wsSymbol": "NKE",
+      "name": "Nike",
+      "group": "Consumer Discretionary",
+      "marketCap": 62759992458
+    },
+    {
+      "ticker": "NVDA",
+      "wsSymbol": "NVDA",
+      "name": "NVIDIA",
+      "group": "Information Technology",
+      "marketCap": 4845168840000
+    },
+    {
+      "ticker": "PG",
+      "wsSymbol": "PG",
+      "name": "Procter & Gamble",
+      "group": "Consumer Staples",
+      "marketCap": 351292441821
+    },
+    {
+      "ticker": "SHW",
+      "wsSymbol": "SHW",
+      "name": "Sherwin-Williams",
+      "group": "Materials",
+      "marketCap": 79638642020
+    },
+    {
+      "ticker": "TRV",
+      "wsSymbol": "TRV",
+      "name": "Travelers",
+      "group": "Financials",
+      "marketCap": 67399861893
+    },
+    {
+      "ticker": "UNH",
+      "wsSymbol": "UNH",
+      "name": "UnitedHealth Group",
+      "group": "Health Care",
+      "marketCap": 371658097337
+    },
+    {
+      "ticker": "V",
+      "wsSymbol": "V",
+      "name": "Visa",
+      "group": "Financials",
+      "marketCap": 624684803424
+    },
+    {
+      "ticker": "VZ",
+      "wsSymbol": "VZ",
+      "name": "Verizon",
+      "group": "Communication Services",
+      "marketCap": 195123867864
+    },
+    {
+      "ticker": "WMT",
+      "wsSymbol": "WMT",
+      "name": "Walmart",
+      "group": "Consumer Staples",
+      "marketCap": 950353812690
+    },
+    {
+      "ticker": "DOW",
+      "wsSymbol": "DOW",
+      "name": "Dow Inc.",
+      "group": "Materials",
+      "marketCap": 21860087814
+    }
+  ]
+}

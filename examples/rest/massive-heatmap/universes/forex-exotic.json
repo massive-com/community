@@ -1,0 +1,63 @@
+{
+  "id": "forex-exotic",
+  "segment": "forex",
+  "label": "USD Exotics",
+  "constituents": [
+    {
+      "ticker": "USDMXN",
+      "wsSymbol": "USD/MXN",
+      "name": "US Dollar / Mexican Peso",
+      "group": "Exotic",
+      "marketCap": 400
+    },
+    {
+      "ticker": "USDZAR",
+      "wsSymbol": "USD/ZAR",
+      "name": "US Dollar / South African Rand",
+      "group": "Exotic",
+      "marketCap": 150
+    },
+    {
+      "ticker": "USDSGD",
+      "wsSymbol": "USD/SGD",
+      "name": "US Dollar / Singapore Dollar",
+      "group": "Exotic",
+      "marketCap": 200
+    },
+    {
+      "ticker": "USDHKD",
+      "wsSymbol": "USD/HKD",
+      "name": "US Dollar / Hong Kong Dollar",
+      "group": "Exotic",
+      "marketCap": 300
+    },
+    {
+      "ticker": "USDNOK",
+      "wsSymbol": "USD/NOK",
+      "name": "US Dollar / Norwegian Krone",
+      "group": "Exotic",
+      "marketCap": 150
+    },
+    {
+      "ticker": "USDSEK",
+      "wsSymbol": "USD/SEK",
+      "name": "US Dollar / Swedish Krona",
+      "group": "Exotic",
+      "marketCap": 150
+    },
+    {
+      "ticker": "USDPLN",
+      "wsSymbol": "USD/PLN",
+      "name": "US Dollar / Polish Zloty",
+      "group": "Exotic",
+      "marketCap": 100
+    },
+    {
+      "ticker": "USDTRY",
+      "wsSymbol": "USD/TRY",
+      "name": "US Dollar / Turkish Lira",
+      "group": "Exotic",
+      "marketCap": 200
+    }
+  ]
+}

@@ -1,0 +1,714 @@
+{
+  "id": "nasdaq100",
+  "segment": "stocks",
+  "label": "Nasdaq 100",
+  "constituents": [
+    {
+      "ticker": "ADBE",
+      "wsSymbol": "ADBE",
+      "name": "Adobe Inc.",
+      "group": "Information Technology",
+      "marketCap": 77576100000
+    },
+    {
+      "ticker": "AMD",
+      "wsSymbol": "AMD",
+      "name": "Advanced Micro Devices",
+      "group": "Information Technology",
+      "marketCap": 876235865379
+    },
+    {
+      "ticker": "ABNB",
+      "wsSymbol": "ABNB",
+      "name": "Airbnb",
+      "group": "Consumer Discretionary",
+      "marketCap": 84521036084
+    },
+    {
+      "ticker": "ALNY",
+      "wsSymbol": "ALNY",
+      "name": "Alnylam Pharmaceuticals",
+      "group": "Health Care",
+      "marketCap": 37128511426
+    },
+    {
+      "ticker": "GOOGL",
+      "wsSymbol": "GOOGL",
+      "name": "Alphabet Inc. (Class A)",
+      "group": "Information Technology",
+      "marketCap": 4490912988666
+    },
+    {
+      "ticker": "GOOG",
+      "wsSymbol": "GOOG",
+      "name": "Alphabet Inc. (Class C)",
+      "group": "Information Technology",
+      "marketCap": 4483957521982
+    },
+    {
+      "ticker": "AMZN",
+      "wsSymbol": "AMZN",
+      "name": "Amazon",
+      "group": "Consumer Discretionary",
+      "marketCap": 2628929975064
+    },
+    {
+      "ticker": "AEP",
+      "wsSymbol": "AEP",
+      "name": "American Electric Power",
+      "group": "Utilities",
+      "marketCap": 69476771536
+    },
+    {
+      "ticker": "AMGN",
+      "wsSymbol": "AMGN",
+      "name": "Amgen",
+      "group": "Health Care",
+      "marketCap": 182205513302
+    },
+    {
+      "ticker": "ADI",
+      "wsSymbol": "ADI",
+      "name": "Analog Devices",
+      "group": "Information Technology",
+      "marketCap": 211619835398
+    },
+    {
+      "ticker": "AAPL",
+      "wsSymbol": "AAPL",
+      "name": "Apple Inc.",
+      "group": "Information Technology",
+      "marketCap": 4376978961560
+    },
+    {
+      "ticker": "AMAT",
+      "wsSymbol": "AMAT",
+      "name": "Applied Materials",
+      "group": "Information Technology",
+      "marketCap": 489960303847
+    },
+    {
+      "ticker": "APP",
+      "wsSymbol": "APP",
+      "name": "AppLovin",
+      "group": "Information Technology",
+      "marketCap": 157794152409
+    },
+    {
+      "ticker": "ARM",
+      "wsSymbol": "ARM",
+      "name": "Arm Holdings",
+      "group": "Information Technology",
+      "marketCap": 469377891870
+    },
+    {
+      "ticker": "ASML",
+      "wsSymbol": "ASML",
+      "name": "ASML Holding",
+      "group": "Information Technology",
+      "marketCap": 743732759797
+    },
+    {
+      "ticker": "ADSK",
+      "wsSymbol": "ADSK",
+      "name": "Autodesk",
+      "group": "Information Technology",
+      "marketCap": 40924172549
+    },
+    {
+      "ticker": "ADP",
+      "wsSymbol": "ADP",
+      "name": "Automatic Data Processing",
+      "group": "Industrials",
+      "marketCap": 87305964532
+    },
+    {
+      "ticker": "AXON",
+      "wsSymbol": "AXON",
+      "name": "Axon Enterprise",
+      "group": "Industrials",
+      "marketCap": 34126919402
+    },
+    {
+      "ticker": "BKR",
+      "wsSymbol": "BKR",
+      "name": "Baker Hughes",
+      "group": "Energy",
+      "marketCap": 57946732592
+    },
+    {
+      "ticker": "BKNG",
+      "wsSymbol": "BKNG",
+      "name": "Booking Holdings",
+      "group": "Consumer Discretionary",
+      "marketCap": 133108617736
+    },
+    {
+      "ticker": "AVGO",
+      "wsSymbol": "AVGO",
+      "name": "Broadcom",
+      "group": "Information Technology",
+      "marketCap": 1957030614447
+    },
+    {
+      "ticker": "CDNS",
+      "wsSymbol": "CDNS",
+      "name": "Cadence Design Systems",
+      "group": "Information Technology",
+      "marketCap": 106848360240
+    },
+    {
+      "ticker": "CHTR",
+      "wsSymbol": "CHTR",
+      "name": "Charter Communications",
+      "group": "Communication Services",
+      "marketCap": 15524338106
+    },
+    {
+      "ticker": "CTAS",
+      "wsSymbol": "CTAS",
+      "name": "Cintas",
+      "group": "Industrials",
+      "marketCap": 68363386119
+    },
+    {
+      "ticker": "CSCO",
+      "wsSymbol": "CSCO",
+      "name": "Cisco",
+      "group": "Communication Services",
+      "marketCap": 471159099854
+    },
+    {
+      "ticker": "CCEP",
+      "wsSymbol": "CCEP",
+      "name": "Coca-Cola Europacific Partners",
+      "group": "Consumer Staples",
+      "marketCap": 42918379360
+    },
+    {
+      "ticker": "CTSH",
+      "wsSymbol": "CTSH",
+      "name": "Cognizant",
+      "group": "Information Technology",
+      "marketCap": 20670100000
+    },
+    {
+      "ticker": "CMCSA",
+      "wsSymbol": "CMCSA",
+      "name": "Comcast",
+      "group": "Communication Services",
+      "marketCap": 80125086534
+    },
+    {
+      "ticker": "CEG",
+      "wsSymbol": "CEG",
+      "name": "Constellation Energy",
+      "group": "Utilities",
+      "marketCap": 97867378779
+    },
+    {
+      "ticker": "CPRT",
+      "wsSymbol": "CPRT",
+      "name": "Copart",
+      "group": "Consumer Discretionary",
+      "marketCap": 27987281101
+    },
+    {
+      "ticker": "COST",
+      "wsSymbol": "COST",
+      "name": "Costco",
+      "group": "Consumer Discretionary",
+      "marketCap": 421947908066
+    },
+    {
+      "ticker": "CRWD",
+      "wsSymbol": "CRWD",
+      "name": "CrowdStrike",
+      "group": "Information Technology",
+      "marketCap": 174341262625
+    },
+    {
+      "ticker": "CSX",
+      "wsSymbol": "CSX",
+      "name": "CSX Corporation",
+      "group": "Industrials",
+      "marketCap": 84786875999
+    },
+    {
+      "ticker": "DDOG",
+      "wsSymbol": "DDOG",
+      "name": "Datadog",
+      "group": "Information Technology",
+      "marketCap": 79379122147
+    },
+    {
+      "ticker": "DXCM",
+      "wsSymbol": "DXCM",
+      "name": "DexCom",
+      "group": "Health Care",
+      "marketCap": 27964214643
+    },
+    {
+      "ticker": "FANG",
+      "wsSymbol": "FANG",
+      "name": "Diamondback Energy",
+      "group": "Energy",
+      "marketCap": 51620990000
+    },
+    {
+      "ticker": "DASH",
+      "wsSymbol": "DASH",
+      "name": "DoorDash",
+      "group": "Information Technology",
+      "marketCap": 75579769518
+    },
+    {
+      "ticker": "EA",
+      "wsSymbol": "EA",
+      "name": "Electronic Arts",
+      "group": "Consumer Discretionary",
+      "marketCap": 50689412491
+    },
+    {
+      "ticker": "EXC",
+      "wsSymbol": "EXC",
+      "name": "Exelon",
+      "group": "Utilities",
+      "marketCap": 46873164985
+    },
+    {
+      "ticker": "FAST",
+      "wsSymbol": "FAST",
+      "name": "Fastenal",
+      "group": "Industrials",
+      "marketCap": 52683328949
+    },
+    {
+      "ticker": "FER",
+      "wsSymbol": "FER",
+      "name": "Ferrovial",
+      "group": "Industrials",
+      "marketCap": 49546726786
+    },
+    {
+      "ticker": "FTNT",
+      "wsSymbol": "FTNT",
+      "name": "Fortinet",
+      "group": "Information Technology",
+      "marketCap": 106036201629
+    },
+    {
+      "ticker": "GEHC",
+      "wsSymbol": "GEHC",
+      "name": "GE HealthCare",
+      "group": "Health Care",
+      "marketCap": 28016785100
+    },
+    {
+      "ticker": "GILD",
+      "wsSymbol": "GILD",
+      "name": "Gilead Sciences",
+      "group": "Health Care",
+      "marketCap": 153656687606
+    },
+    {
+      "ticker": "HON",
+      "wsSymbol": "HON",
+      "name": "Honeywell",
+      "group": "Industrials",
+      "marketCap": 145112900782
+    },
+    {
+      "ticker": "IDXX",
+      "wsSymbol": "IDXX",
+      "name": "Idexx Laboratories",
+      "group": "Health Care",
+      "marketCap": 44339343784
+    },
+    {
+      "ticker": "INSM",
+      "wsSymbol": "INSM",
+      "name": "Insmed Incorporated",
+      "group": "Health Care",
+      "marketCap": 20764884806
+    },
+    {
+      "ticker": "INTC",
+      "wsSymbol": "INTC",
+      "name": "Intel",
+      "group": "Information Technology",
+      "marketCap": 673433740000
+    },
+    {
+      "ticker": "INTU",
+      "wsSymbol": "INTU",
+      "name": "Intuit",
+      "group": "Information Technology",
+      "marketCap": 73034379000
+    },
+    {
+      "ticker": "ISRG",
+      "wsSymbol": "ISRG",
+      "name": "Intuitive Surgical",
+      "group": "Health Care",
+      "marketCap": 144066360869
+    },
+    {
+      "ticker": "KDP",
+      "wsSymbol": "KDP",
+      "name": "Keurig Dr Pepper",
+      "group": "Consumer Staples",
+      "marketCap": 41850809328
+    },
+    {
+      "ticker": "KLAC",
+      "wsSymbol": "KLAC",
+      "name": "KLA Corporation",
+      "group": "Information Technology",
+      "marketCap": 339056793508
+    },
+    {
+      "ticker": "KHC",
+      "wsSymbol": "KHC",
+      "name": "Kraft Heinz",
+      "group": "Consumer Staples",
+      "marketCap": 27059445699
+    },
+    {
+      "ticker": "LRCX",
+      "wsSymbol": "LRCX",
+      "name": "Lam Research",
+      "group": "Information Technology",
+      "marketCap": 486522141840
+    },
+    {
+      "ticker": "LIN",
+      "wsSymbol": "LIN",
+      "name": "Linde plc",
+      "group": "Materials",
+      "marketCap": 236791174816
+    },
+    {
+      "ticker": "LITE",
+      "wsSymbol": "LITE",
+      "name": "Lumentum",
+      "group": "Information Technology",
+      "marketCap": 66130000000
+    },
+    {
+      "ticker": "MAR",
+      "wsSymbol": "MAR",
+      "name": "Marriott International",
+      "group": "Consumer Discretionary",
+      "marketCap": 104473432433
+    },
+    {
+      "ticker": "MRVL",
+      "wsSymbol": "MRVL",
+      "name": "Marvell Technology",
+      "group": "Information Technology",
+      "marketCap": 271695384000
+    },
+    {
+      "ticker": "MELI",
+      "wsSymbol": "MELI",
+      "name": "Mercado Libre",
+      "group": "Consumer Discretionary",
+      "marketCap": 82897497147
+    },
+    {
+      "ticker": "META",
+      "wsSymbol": "META",
+      "name": "Meta Platforms",
+      "group": "Information Technology",
+      "marketCap": 1465228699535
+    },
+    {
+      "ticker": "MCHP",
+      "wsSymbol": "MCHP",
+      "name": "Microchip Technology",
+      "group": "Information Technology",
+      "marketCap": 54083249865
+    },
+    {
+      "ticker": "MU",
+      "wsSymbol": "MU",
+      "name": "Micron Technology",
+      "group": "Information Technology",
+      "marketCap": 1278839136493
+    },
+    {
+      "ticker": "MSFT",
+      "wsSymbol": "MSFT",
+      "name": "Microsoft",
+      "group": "Information Technology",
+      "marketCap": 2818348126698
+    },
+    {
+      "ticker": "MSTR",
+      "wsSymbol": "MSTR",
+      "name": "MicroStrategy",
+      "group": "Information Technology",
+      "marketCap": 39954191398
+    },
+    {
+      "ticker": "MDLZ",
+      "wsSymbol": "MDLZ",
+      "name": "Mondelez International",
+      "group": "Consumer Staples",
+      "marketCap": 77173023932
+    },
+    {
+      "ticker": "MPWR",
+      "wsSymbol": "MPWR",
+      "name": "Monolithic Power Systems",
+      "group": "Information Technology",
+      "marketCap": 76824581000
+    },
+    {
+      "ticker": "MNST",
+      "wsSymbol": "MNST",
+      "name": "Monster Beverage",
+      "group": "Consumer Staples",
+      "marketCap": 89331260767
+    },
+    {
+      "ticker": "NFLX",
+      "wsSymbol": "NFLX",
+      "name": "Netflix, Inc.",
+      "group": "Consumer Discretionary",
+      "marketCap": 325831590097
+    },
+    {
+      "ticker": "NVDA",
+      "wsSymbol": "NVDA",
+      "name": "Nvidia",
+      "group": "Information Technology",
+      "marketCap": 5103122490000
+    },
+    {
+      "ticker": "NXPI",
+      "wsSymbol": "NXPI",
+      "name": "NXP Semiconductors",
+      "group": "Information Technology",
+      "marketCap": 79091614918
+    },
+    {
+      "ticker": "ORLY",
+      "wsSymbol": "ORLY",
+      "name": "O'Reilly Automotive",
+      "group": "Consumer Discretionary",
+      "marketCap": 71965617460
+    },
+    {
+      "ticker": "ODFL",
+      "wsSymbol": "ODFL",
+      "name": "Old Dominion Freight Line",
+      "group": "Industrials",
+      "marketCap": 45969309274
+    },
+    {
+      "ticker": "PCAR",
+      "wsSymbol": "PCAR",
+      "name": "Paccar",
+      "group": "Consumer Discretionary",
+      "marketCap": 62601746940
+    },
+    {
+      "ticker": "PLTR",
+      "wsSymbol": "PLTR",
+      "name": "Palantir Technologies",
+      "group": "Information Technology",
+      "marketCap": 307982669685
+    },
+    {
+      "ticker": "PANW",
+      "wsSymbol": "PANW",
+      "name": "Palo Alto Networks",
+      "group": "Information Technology",
+      "marketCap": 234540700000
+    },
+    {
+      "ticker": "PAYX",
+      "wsSymbol": "PAYX",
+      "name": "Paychex",
+      "group": "Industrials",
+      "marketCap": 35198496149
+    },
+    {
+      "ticker": "PYPL",
+      "wsSymbol": "PYPL",
+      "name": "PayPal",
+      "group": "Industrials",
+      "marketCap": 37498304507
+    },
+    {
+      "ticker": "PDD",
+      "wsSymbol": "PDD",
+      "name": "PDD Holdings",
+      "group": "Information Technology",
+      "marketCap": 113245422517
+    },
+    {
+      "ticker": "PEP",
+      "wsSymbol": "PEP",
+      "name": "PepsiCo",
+      "group": "Consumer Staples",
+      "marketCap": 194108436096
+    },
+    {
+      "ticker": "QCOM",
+      "wsSymbol": "QCOM",
+      "name": "Qualcomm",
+      "group": "Information Technology",
+      "marketCap": 238319940000
+    },
+    {
+      "ticker": "REGN",
+      "wsSymbol": "REGN",
+      "name": "Regeneron Pharmaceuticals",
+      "group": "Health Care",
+      "marketCap": 63945519178
+    },
+    {
+      "ticker": "ROP",
+      "wsSymbol": "ROP",
+      "name": "Roper Technologies",
+      "group": "Information Technology",
+      "marketCap": 33328462397
+    },
+    {
+      "ticker": "ROST",
+      "wsSymbol": "ROST",
+      "name": "Ross Stores",
+      "group": "Consumer Discretionary",
+      "marketCap": 74677834493
+    },
+    {
+      "ticker": "SNDK",
+      "wsSymbol": "SNDK",
+      "name": "Sandisk",
+      "group": "Information Technology",
+      "marketCap": 323539098790
+    },
+    {
+      "ticker": "STX",
+      "wsSymbol": "STX",
+      "name": "Seagate Technology",
+      "group": "Information Technology",
+      "marketCap": 242141802107
+    },
+    {
+      "ticker": "SHOP",
+      "wsSymbol": "SHOP",
+      "name": "Shopify",
+      "group": "Information Technology",
+      "marketCap": 141249704298
+    },
+    {
+      "ticker": "SBUX",
+      "wsSymbol": "SBUX",
+      "name": "Starbucks",
+      "group": "Consumer Discretionary",
+      "marketCap": 114710805000
+    },
+    {
+      "ticker": "SNPS",
+      "wsSymbol": "SNPS",
+      "name": "Synopsys",
+      "group": "Information Technology",
+      "marketCap": 87220747331
+    },
+    {
+      "ticker": "TMUS",
+      "wsSymbol": "TMUS",
+      "name": "T-Mobile US",
+      "group": "Communication Services",
+      "marketCap": 196604130937
+    },
+    {
+      "ticker": "TTWO",
+      "wsSymbol": "TTWO",
+      "name": "Take-Two Interactive",
+      "group": "Consumer Discretionary",
+      "marketCap": 44426319123
+    },
+    {
+      "ticker": "TSLA",
+      "wsSymbol": "TSLA",
+      "name": "Tesla, Inc.",
+      "group": "Consumer Discretionary",
+      "marketCap": 1504129853097
+    },
+    {
+      "ticker": "TXN",
+      "wsSymbol": "TXN",
+      "name": "Texas Instruments",
+      "group": "Information Technology",
+      "marketCap": 293832558502
+    },
+    {
+      "ticker": "TRI",
+      "wsSymbol": "TRI",
+      "name": "Thomson Reuters",
+      "group": "Information Technology",
+      "marketCap": 34303221811
+    },
+    {
+      "ticker": "VRSK",
+      "wsSymbol": "VRSK",
+      "name": "Verisk Analytics",
+      "group": "Industrials",
+      "marketCap": 22771595792
+    },
+    {
+      "ticker": "VRTX",
+      "wsSymbol": "VRTX",
+      "name": "Vertex Pharmaceuticals",
+      "group": "Health Care",
+      "marketCap": 114626140480
+    },
+    {
+      "ticker": "WMT",
+      "wsSymbol": "WMT",
+      "name": "Walmart",
+      "group": "Consumer Discretionary",
+      "marketCap": 932527715383
+    },
+    {
+      "ticker": "WBD",
+      "wsSymbol": "WBD",
+      "name": "Warner Bros. Discovery",
+      "group": "Consumer Discretionary",
+      "marketCap": 65686981592
+    },
+    {
+      "ticker": "WDC",
+      "wsSymbol": "WDC",
+      "name": "Western Digital",
+      "group": "Information Technology",
+      "marketCap": 257212146616
+    },
+    {
+      "ticker": "WDAY",
+      "wsSymbol": "WDAY",
+      "name": "Workday, Inc.",
+      "group": "Information Technology",
+      "marketCap": 28878608899
+    },
+    {
+      "ticker": "XEL",
+      "wsSymbol": "XEL",
+      "name": "Xcel Energy",
+      "group": "Utilities",
+      "marketCap": 48324706640
+    },
+    {
+      "ticker": "ZS",
+      "wsSymbol": "ZS",
+      "name": "Zscaler",
+      "group": "Information Technology",
+      "marketCap": 20189434196
+    }
+  ]
+}

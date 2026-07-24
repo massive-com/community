@@ -1,0 +1,84 @@
+{
+  "id": "etf-sectors",
+  "segment": "etfs",
+  "label": "Sector SPDRs",
+  "constituents": [
+    {
+      "ticker": "XLK",
+      "wsSymbol": "XLK",
+      "name": "Technology Select Sector SPDR Fund",
+      "group": "Technology",
+      "marketCap": 117780
+    },
+    {
+      "ticker": "XLF",
+      "wsSymbol": "XLF",
+      "name": "Financial Select Sector SPDR Fund",
+      "group": "Financials",
+      "marketCap": 49530
+    },
+    {
+      "ticker": "XLE",
+      "wsSymbol": "XLE",
+      "name": "Energy Select Sector SPDR Fund",
+      "group": "Energy",
+      "marketCap": 39120
+    },
+    {
+      "ticker": "XLV",
+      "wsSymbol": "XLV",
+      "name": "Health Care Select Sector SPDR Fund",
+      "group": "Health Care",
+      "marketCap": 39240
+    },
+    {
+      "ticker": "XLY",
+      "wsSymbol": "XLY",
+      "name": "Consumer Discretionary Select Sector SPDR Fund",
+      "group": "Consumer Discretionary",
+      "marketCap": 22440
+    },
+    {
+      "ticker": "XLP",
+      "wsSymbol": "XLP",
+      "name": "Consumer Staples Select Sector SPDR Fund",
+      "group": "Consumer Staples",
+      "marketCap": 14670
+    },
+    {
+      "ticker": "XLI",
+      "wsSymbol": "XLI",
+      "name": "Industrial Select Sector SPDR Fund",
+      "group": "Industrials",
+      "marketCap": 31070
+    },
+    {
+      "ticker": "XLB",
+      "wsSymbol": "XLB",
+      "name": "Materials Select Sector SPDR Fund",
+      "group": "Materials",
+      "marketCap": 7830
+    },
+    {
+      "ticker": "XLRE",
+      "wsSymbol": "XLRE",
+      "name": "Real Estate Select Sector SPDR Fund",
+      "group": "Real Estate",
+      "marketCap": 8170
+    },
+    {
+      "ticker": "XLU",
+      "wsSymbol": "XLU",
+      "name": "Utilities Select Sector SPDR Fund",
+      "group": "Utilities",
+      "marketCap": 22550
+    },
+    {
+      "ticker": "XLC",
+      "wsSymbol": "XLC",
+      "name": "Communication Services Select Sector SPDR Fund",
+      "group": "Communication Services",
+      "marketCap": 23800
+    }
+  ]
+}

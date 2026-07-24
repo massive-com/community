@@ -1,0 +1,35 @@
+{
+  "id": "futures-equity",
+  "segment": "futures",
+  "label": "Equity Index Futures",
+  "constituents": [
+    {
+      "ticker": "ES",
+      "wsSymbol": "ESU6",
+      "name": "E-mini S&P 500",
+      "group": "Equity Index",
+      "marketCap": 680564
+    },
+    {
+      "ticker": "NQ",
+      "wsSymbol": "NQU6",
+      "name": "E-mini Nasdaq 100",
+      "group": "Equity Index",
+      "marketCap": 296986
+    },
+    {
+      "ticker": "YM",
+      "wsSymbol": "YMU6",
+      "name": "E-mini Dow",
+      "group": "Equity Index",
+      "marketCap": 44622
+    },
+    {
+      "ticker": "RTY",
+      "wsSymbol": "RTYU6",
+      "name": "E-mini Russell 2000",
+      "group": "Equity Index",
+      "marketCap": 72071
+    }
+  ]
+}

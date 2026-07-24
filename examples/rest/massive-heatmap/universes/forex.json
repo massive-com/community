@@ -1,0 +1,14 @@
+{
+  "id": "forex",
+  "segment": "forex",
+  "label": "FX Majors",
+  "constituents": [
+    { "ticker": "EURUSD", "wsSymbol": "EUR/USD", "name": "Euro / US Dollar", "group": "Major", "marketCap": 1000 },
+    { "ticker": "USDJPY", "wsSymbol": "USD/JPY", "name": "US Dollar / Japanese Yen", "group": "Major", "marketCap": 900 },
+    { "ticker": "GBPUSD", "wsSymbol": "GBP/USD", "name": "British Pound / US Dollar", "group": "Major", "marketCap": 700 },
+    { "ticker": "USDCHF", "wsSymbol": "USD/CHF", "name": "US Dollar / Swiss Franc", "group": "Major", "marketCap": 500 },
+    { "ticker": "AUDUSD", "wsSymbol": "AUD/USD", "name": "Australian Dollar / US Dollar", "group": "Major", "marketCap": 400 },
+    { "ticker": "USDCAD", "wsSymbol": "USD/CAD", "name": "US Dollar / Canadian Dollar", "group": "Major", "marketCap": 400 },
+    { "ticker": "NZDUSD", "wsSymbol": "NZD/USD", "name": "New Zealand Dollar / US Dollar", "group": "Major", "marketCap": 200 }
+  ]
+}

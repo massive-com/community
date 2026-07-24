@@ -1,0 +1,77 @@
+{
+  "id": "forex-crosses",
+  "segment": "forex",
+  "label": "Crosses",
+  "constituents": [
+    {
+      "ticker": "EURGBP",
+      "wsSymbol": "EUR/GBP",
+      "name": "Euro / British Pound",
+      "group": "Cross",
+      "marketCap": 600
+    },
+    {
+      "ticker": "EURJPY",
+      "wsSymbol": "EUR/JPY",
+      "name": "Euro / Japanese Yen",
+      "group": "Cross",
+      "marketCap": 500
+    },
+    {
+      "ticker": "GBPJPY",
+      "wsSymbol": "GBP/JPY",
+      "name": "British Pound / Japanese Yen",
+      "group": "Cross",
+      "marketCap": 350
+    },
+    {
+      "ticker": "EURCHF",
+      "wsSymbol": "EUR/CHF",
+      "name": "Euro / Swiss Franc",
+      "group": "Cross",
+      "marketCap": 300
+    },
+    {
+      "ticker": "AUDJPY",
+      "wsSymbol": "AUD/JPY",
+      "name": "Australian Dollar / Japanese Yen",
+      "group": "Cross",
+      "marketCap": 250
+    },
+    {
+      "ticker": "EURAUD",
+      "wsSymbol": "EUR/AUD",
+      "name": "Euro / Australian Dollar",
+      "group": "Cross",
+      "marketCap": 200
+    },
+    {
+      "ticker": "GBPCHF",
+      "wsSymbol": "GBP/CHF",
+      "name": "British Pound / Swiss Franc",
+      "group": "Cross",
+      "marketCap": 200
+    },
+    {
+      "ticker": "CADJPY",
+      "wsSymbol": "CAD/JPY",
+      "name": "Canadian Dollar / Japanese Yen",
+      "group": "Cross",
+      "marketCap": 150
+    },
+    {
+      "ticker": "NZDJPY",
+      "wsSymbol": "NZD/JPY",
+      "name": "New Zealand Dollar / Japanese Yen",
+      "group": "Cross",
+      "marketCap": 150
+    },
+    {
+      "ticker": "EURCAD",
+      "wsSymbol": "EUR/CAD",
+      "name": "Euro / Canadian Dollar",
+      "group": "Cross",
+      "marketCap": 200
+    }
+  ]
+}
